@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no linter configured yet'"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "fastify": "^5.3.0",
+    "fastify-type-provider-zod": "^4.0.0",
+    "zod": "^3.24.0",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/cookie": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}
