@@ -1,22 +1,11 @@
 node_modules/
 dist/
-.turbo/
-*.tsbuildinfo
-
-# Environment
 .env
-.env.local
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+.env.*
+!.env.example
+*.log
 .DS_Store
-
-# Prisma
-packages/db/prisma/migrations/
-
-# Build
-apps/web/dist/
+.turbo/
+.claude/
+.opencode/
+_bmad/
