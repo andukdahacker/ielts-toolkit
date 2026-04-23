@@ -1,19 +1,29 @@
 import { useEffect } from 'preact/hooks'
 import { ConnectionStatus } from './connection-status'
-import { SetupSheetPlaceholder } from './setup-sheet-placeholder'
+import { SetupSheet } from './setup-sheet'
+import { SheetInfo } from './sheet-info'
+import { StudentPicker } from './student-picker'
+import { EmptyState } from './empty-state'
 import { connectionStatus, checkConnection } from '../state/connection'
-import { linkedSheet } from '../state/sheet'
+import { linkedSheet, initializeSheet } from '../state/sheet'
 
 export function App() {
   useEffect(() => {
-    checkConnection()
+    checkConnection().then(() => initializeSheet())
   }, [])
 
   return (
     <div class="sidebar">
       <ConnectionStatus />
       {connectionStatus.value === 'connected' && !linkedSheet.value && (
-        <SetupSheetPlaceholder />
+        <SetupSheet />
+      )}
+      {linkedSheet.value && (
+        <>
+          <SheetInfo />
+          <StudentPicker />
+          <EmptyState />
+        </>
       )}
     </div>
   )

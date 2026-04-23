@@ -11,3 +11,7 @@
 
 - **W5:** Race condition if `checkConnection()` called while already connecting (rapid retry clicks) — low risk, single button click timing. Add `if (connectionStatus.value === 'connecting') return;` guard if retry behavior becomes an issue.
 - **W6:** `.clasp.json` contains placeholder scriptId and is not in `.gitignore` — could leak project config when real script ID is added. Consider `.gitignore` + `.clasp.json.example` pattern.
+
+## Deferred from: code review of 1-3-create-new-score-sheet-with-student-import (2026-04-23)
+
+- **W7:** `goBack()` callable during `creating` step via external code — currently UI-guarded (Creating component has no Back button) but no programmatic guard in the action function. If a future keyboard shortcut or test calls `goBack()` mid-creation, state becomes inconsistent. Low risk while UI is the only caller.
