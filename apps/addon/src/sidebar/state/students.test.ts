@@ -3,17 +3,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 vi.mock('../lib/gas', () => ({
   checkBackendHealth: vi.fn(),
   getStudentRoster: vi.fn(),
+  addStudentToRoster: vi.fn(),
 }))
 
-import { studentRoster, selectedStudent, studentIndex, loadRoster, selectStudent } from './students'
-import { getStudentRoster } from '../lib/gas'
+import { studentRoster, selectedStudent, studentIndex, loadRoster, selectStudent, addStudent, addingStudent, addStudentError } from './students'
+import { getStudentRoster, addStudentToRoster } from '../lib/gas'
 
 const mockGetStudentRoster = vi.mocked(getStudentRoster)
+const mockAddStudentToRoster = vi.mocked(addStudentToRoster)
 
 describe('students state', () => {
   beforeEach(() => {
     studentRoster.value = []
     selectedStudent.value = null
+    addingStudent.value = false
+    addStudentError.value = null
     vi.clearAllMocks()
   })
 
@@ -81,6 +85,68 @@ describe('students state', () => {
     it('returns -1 when no student selected', () => {
       studentRoster.value = ['Minh', 'Trang']
       expect(studentIndex.value).toBe(-1)
+    })
+  })
+
+  describe('addStudent', () => {
+    it('adds student and updates roster on success', async () => {
+      studentRoster.value = ['Minh', 'Trang']
+      mockAddStudentToRoster.mockResolvedValueOnce(['Minh', 'Trang', 'Huy'])
+
+      await addStudent('Huy')
+
+      expect(mockAddStudentToRoster).toHaveBeenCalledWith('Huy')
+      expect(studentRoster.value).toEqual(['Minh', 'Trang', 'Huy'])
+      expect(selectedStudent.value).toBe('Huy')
+      expect(addingStudent.value).toBe(false)
+      expect(addStudentError.value).toBeNull()
+    })
+
+    it('trims whitespace from name', async () => {
+      mockAddStudentToRoster.mockResolvedValueOnce(['Huy'])
+      await addStudent('  Huy  ')
+      expect(mockAddStudentToRoster).toHaveBeenCalledWith('Huy')
+    })
+
+    it('rejects empty name', async () => {
+      await addStudent('   ')
+      expect(addStudentError.value).toBe('Please enter a student name')
+      expect(mockAddStudentToRoster).not.toHaveBeenCalled()
+    })
+
+    it('rejects name longer than 100 characters', async () => {
+      const longName = 'A'.repeat(101)
+      await addStudent(longName)
+      expect(addStudentError.value).toBe('Student name must be 100 characters or fewer')
+      expect(mockAddStudentToRoster).not.toHaveBeenCalled()
+    })
+
+    it('rejects duplicate name (case-insensitive)', async () => {
+      studentRoster.value = ['Minh', 'Trang']
+      await addStudent('minh')
+      expect(addStudentError.value).toBe('A student with this name already exists')
+      expect(mockAddStudentToRoster).not.toHaveBeenCalled()
+    })
+
+    it('sets addingStudent during async call', async () => {
+      let resolveAdd: (value: string[]) => void
+      mockAddStudentToRoster.mockReturnValueOnce(
+        new Promise<string[]>((resolve) => { resolveAdd = resolve })
+      )
+
+      const promise = addStudent('Huy')
+      expect(addingStudent.value).toBe(true)
+
+      resolveAdd!(['Huy'])
+      await promise
+      expect(addingStudent.value).toBe(false)
+    })
+
+    it('sets error on server failure', async () => {
+      mockAddStudentToRoster.mockRejectedValueOnce(new Error('Sheet is busy'))
+      await addStudent('Huy')
+      expect(addStudentError.value).toBe('Sheet is busy')
+      expect(addingStudent.value).toBe(false)
     })
   })
 })

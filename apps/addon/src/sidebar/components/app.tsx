@@ -4,6 +4,7 @@ import { SetupSheet } from './setup-sheet'
 import { SheetInfo } from './sheet-info'
 import { StudentPicker } from './student-picker'
 import { EmptyState } from './empty-state'
+import { AddStudent } from './add-student'
 import { connectionStatus, checkConnection } from '../state/connection'
 import { linkedSheet, initializeSheet } from '../state/sheet'
 
@@ -22,6 +23,7 @@ export function App() {
         <>
           <SheetInfo />
           <StudentPicker />
+          <AddStudent />
           <EmptyState />
         </>
       )}

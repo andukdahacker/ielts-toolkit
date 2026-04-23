@@ -9,6 +9,8 @@ vi.mock('../lib/gas', () => ({
   linkSheet: vi.fn(),
   unlinkSheet: vi.fn(),
   getStudentRoster: vi.fn(),
+  addStudentToRoster: vi.fn(),
+  getSheetMeta: vi.fn(),
 }))
 
 import {
@@ -17,7 +19,11 @@ import {
   setupError,
   importedColumns,
   previewNames,
+  importSheetUrl,
+  setupMode,
+  selectedColumnIndex,
   startCreateNew,
+  startLinkExisting,
   selectImportFromSheet,
   selectManualEntry,
   submitSheetUrl,
@@ -37,6 +43,7 @@ import {
   linkSheet,
   unlinkSheet,
   getStudentRoster,
+  getSheetMeta,
 } from '../lib/gas'
 
 const mockGetLinkedSheet = vi.mocked(getLinkedSheet)
@@ -46,6 +53,7 @@ const mockCreateScoreSheet = vi.mocked(createScoreSheet)
 const mockLinkSheet = vi.mocked(linkSheet)
 const mockUnlinkSheet = vi.mocked(unlinkSheet)
 const mockGetStudentRoster = vi.mocked(getStudentRoster)
+const mockGetSheetMeta = vi.mocked(getSheetMeta)
 
 describe('sheet state', () => {
   beforeEach(() => {
@@ -54,6 +62,9 @@ describe('sheet state', () => {
     setupError.value = null
     importedColumns.value = null
     previewNames.value = null
+    importSheetUrl.value = ''
+    setupMode.value = 'create'
+    selectedColumnIndex.value = -1
     studentRoster.value = []
     vi.clearAllMocks()
   })
@@ -145,7 +156,7 @@ describe('sheet state', () => {
   })
 
   describe('confirmNames', () => {
-    it('creates sheet, links it, and sets roster', async () => {
+    it('creates sheet, links it, and sets roster in create mode', async () => {
       const sheetInfo = { id: 'new-id', name: 'IELTS Score Sheet', url: 'https://docs.google.com/spreadsheets/d/new-id' }
       mockCreateScoreSheet.mockResolvedValueOnce(sheetInfo)
       mockLinkSheet.mockResolvedValueOnce(undefined)
@@ -153,8 +164,8 @@ describe('sheet state', () => {
       await confirmNames(['Minh', 'Trang'])
 
       expect(mockCreateScoreSheet).toHaveBeenCalledWith(['Minh', 'Trang'])
-      expect(mockLinkSheet).toHaveBeenCalledWith(sheetInfo.id, sheetInfo.name, sheetInfo.url)
-      expect(linkedSheet.value).toEqual(sheetInfo)
+      expect(mockLinkSheet).toHaveBeenCalledWith(sheetInfo.id, sheetInfo.name, sheetInfo.url, 0)
+      expect(linkedSheet.value).toEqual({ ...sheetInfo, studentColumn: 0 })
       expect(studentRoster.value).toEqual(['Minh', 'Trang'])
       expect(setupStep.value).toBe('done')
     })
@@ -206,9 +217,72 @@ describe('sheet state', () => {
     })
   })
 
+  describe('link flow', () => {
+    it('startLinkExisting sets mode to link and navigates to import-url', () => {
+      startLinkExisting()
+      expect(setupMode.value).toBe('link')
+      expect(setupStep.value).toBe('import-url')
+    })
+
+    it('startLinkExisting skips choose-students step', () => {
+      startLinkExisting()
+      expect(setupStep.value).toBe('import-url')
+      // goBack should go to choose-method, not choose-students
+      goBack()
+      expect(setupStep.value).toBe('choose-method')
+    })
+
+    it('selectColumn stores selectedColumnIndex', async () => {
+      mockExtractNames.mockResolvedValueOnce(['Minh', 'Trang'])
+      await selectColumn(2)
+      expect(selectedColumnIndex.value).toBe(2)
+    })
+
+    it('confirmNames in link mode calls getSheetMeta + linkSheet (no createScoreSheet)', async () => {
+      const meta = { id: 'linked-id', name: 'Existing Sheet', url: 'https://docs.google.com/spreadsheets/d/linked-id' }
+      mockGetSheetMeta.mockResolvedValueOnce(meta)
+      mockLinkSheet.mockResolvedValueOnce(undefined)
+
+      setupMode.value = 'link'
+      selectedColumnIndex.value = 2
+      importSheetUrl.value = 'https://docs.google.com/spreadsheets/d/linked-id/edit'
+
+      await confirmNames(['Minh', 'Trang'])
+
+      expect(mockCreateScoreSheet).not.toHaveBeenCalled()
+      expect(mockGetSheetMeta).toHaveBeenCalledWith('https://docs.google.com/spreadsheets/d/linked-id/edit')
+      expect(mockLinkSheet).toHaveBeenCalledWith(meta.id, meta.name, meta.url, 2)
+      expect(linkedSheet.value).toEqual({ ...meta, studentColumn: 2 })
+      expect(studentRoster.value).toEqual(['Minh', 'Trang'])
+      expect(setupStep.value).toBe('done')
+    })
+
+    it('confirmNames in link mode reverts on getSheetMeta failure', async () => {
+      mockGetSheetMeta.mockRejectedValueOnce(new Error("Can't access this Sheet"))
+
+      setupMode.value = 'link'
+      importSheetUrl.value = 'https://docs.google.com/spreadsheets/d/abc/edit'
+      setupStep.value = 'import-preview'
+
+      await confirmNames(['Minh'])
+
+      expect(setupError.value).toBe("Can't access this Sheet")
+      expect(setupStep.value).toBe('import-preview')
+      expect(linkedSheet.value).toBeNull()
+    })
+
+    it('resetSetup clears setupMode and selectedColumnIndex', () => {
+      startLinkExisting()
+      selectedColumnIndex.value = 3
+      resetSetup()
+      expect(setupMode.value).toBe('create')
+      expect(selectedColumnIndex.value).toBe(-1)
+    })
+  })
+
   describe('initializeSheet', () => {
     it('sets linkedSheet when sheet exists and roster loads', async () => {
-      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc' }
+      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc', studentColumn: 0 }
       mockGetLinkedSheet.mockResolvedValueOnce(sheet)
       mockGetStudentRoster.mockResolvedValueOnce(['Minh', 'Trang'])
 
@@ -225,7 +299,7 @@ describe('sheet state', () => {
     })
 
     it('unlinks and resets when roster load fails (sheet deleted)', async () => {
-      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc' }
+      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc', studentColumn: 0 }
       mockGetLinkedSheet.mockResolvedValueOnce(sheet)
       mockGetStudentRoster.mockRejectedValueOnce(new Error('Score Sheet is no longer accessible'))
       mockUnlinkSheet.mockResolvedValueOnce(undefined)
@@ -237,7 +311,7 @@ describe('sheet state', () => {
     })
 
     it('keeps linked sheet on transient error and shows retry message', async () => {
-      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc' }
+      const sheet = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc', studentColumn: 0 }
       mockGetLinkedSheet.mockResolvedValueOnce(sheet)
       mockGetStudentRoster.mockRejectedValueOnce(new Error('Network timeout'))
 

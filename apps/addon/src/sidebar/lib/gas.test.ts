@@ -8,6 +8,8 @@ import {
   linkSheet,
   unlinkSheet,
   getStudentRoster,
+  addStudentToRoster,
+  getSheetMeta,
 } from './gas'
 
 function createMockRun() {
@@ -22,6 +24,8 @@ function createMockRun() {
     linkSheet: vi.fn(),
     unlinkSheet: vi.fn(),
     getStudentRoster: vi.fn(),
+    addStudentToRoster: vi.fn(),
+    getSheetMeta: vi.fn(),
   }
   ;(globalThis as any).google = { script: { run: mockRun } }
   return mockRun
@@ -108,7 +112,7 @@ describe('gas.ts promise wrapper', () => {
 
   it('linkSheet resolves on success', async () => {
     simulateSuccess(mockRun, 'linkSheet', undefined)
-    await expect(linkSheet('id', 'name', 'url')).resolves.toBeUndefined()
+    await expect(linkSheet('id', 'name', 'url', 0)).resolves.toBeUndefined()
   })
 
   it('unlinkSheet resolves on success', async () => {
@@ -126,5 +130,29 @@ describe('gas.ts promise wrapper', () => {
   it('getStudentRoster rejects when sheet inaccessible', async () => {
     simulateFailure(mockRun, 'getStudentRoster', new Error('Score Sheet is no longer accessible'))
     await expect(getStudentRoster()).rejects.toThrow('no longer accessible')
+  })
+
+  it('addStudentToRoster resolves with updated roster', async () => {
+    const updatedRoster = ['Minh', 'Trang', 'Anh', 'Huy']
+    simulateSuccess(mockRun, 'addStudentToRoster', updatedRoster)
+    const result = await addStudentToRoster('Huy')
+    expect(result).toEqual(updatedRoster)
+  })
+
+  it('addStudentToRoster rejects on duplicate', async () => {
+    simulateFailure(mockRun, 'addStudentToRoster', new Error('A student with this name already exists in the Sheet'))
+    await expect(addStudentToRoster('Minh')).rejects.toThrow('already exists')
+  })
+
+  it('getSheetMeta resolves with sheet metadata', async () => {
+    const meta = { id: 'abc', name: 'My Sheet', url: 'https://docs.google.com/spreadsheets/d/abc' }
+    simulateSuccess(mockRun, 'getSheetMeta', meta)
+    const result = await getSheetMeta('https://docs.google.com/spreadsheets/d/abc/edit')
+    expect(result).toEqual(meta)
+  })
+
+  it('getSheetMeta rejects when sheet inaccessible', async () => {
+    simulateFailure(mockRun, 'getSheetMeta', new Error("Can't access this Sheet"))
+    await expect(getSheetMeta('https://docs.google.com/spreadsheets/d/abc/edit')).rejects.toThrow("Can't access")
   })
 })

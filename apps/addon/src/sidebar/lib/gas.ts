@@ -26,11 +26,11 @@ export function createScoreSheet(studentNames: string[]) {
 }
 
 export function getLinkedSheet() {
-  return callGas<SheetInfo | null>((r) => r.getLinkedSheet())
+  return callGas<LinkedSheetInfo | null>((r) => r.getLinkedSheet())
 }
 
-export function linkSheet(sheetId: string, sheetName: string, sheetUrl: string) {
-  return callGas<void>((r) => r.linkSheet(sheetId, sheetName, sheetUrl))
+export function linkSheet(sheetId: string, sheetName: string, sheetUrl: string, studentColumn: number) {
+  return callGas<void>((r) => r.linkSheet(sheetId, sheetName, sheetUrl, studentColumn))
 }
 
 export function unlinkSheet() {
@@ -39,4 +39,12 @@ export function unlinkSheet() {
 
 export function getStudentRoster() {
   return callGas<string[]>((r) => r.getStudentRoster())
+}
+
+export function addStudentToRoster(name: string) {
+  return callGas<string[]>((r) => r.addStudentToRoster(name))
+}
+
+export function getSheetMeta(sheetUrl: string) {
+  return callGas<{ id: string; name: string; url: string }>((r) => r.getSheetMeta(sheetUrl))
 }

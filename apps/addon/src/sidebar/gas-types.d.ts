@@ -10,6 +10,10 @@ type SheetInfo = {
   url: string
 }
 
+type LinkedSheetInfo = SheetInfo & {
+  studentColumn: number
+}
+
 declare namespace google {
   namespace script {
     interface RunnerWithHandlers {
@@ -20,9 +24,11 @@ declare namespace google {
       extractNamesFromColumn(sheetUrl: string, columnIndex: number): void
       createScoreSheet(studentNames: string[]): void
       getLinkedSheet(): void
-      linkSheet(sheetId: string, sheetName: string, sheetUrl: string): void
+      linkSheet(sheetId: string, sheetName: string, sheetUrl: string, studentColumn: number): void
       unlinkSheet(): void
       getStudentRoster(): void
+      addStudentToRoster(name: string): void
+      getSheetMeta(sheetUrl: string): void
       [key: string]: unknown
     }
     const run: RunnerWithHandlers

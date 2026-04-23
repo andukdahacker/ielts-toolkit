@@ -57,7 +57,7 @@ describe('App', () => {
 
   it('shows grading-ready state when sheet is linked', async () => {
     mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
-    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1' }
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
     studentRoster.value = ['Minh', 'Trang']
     selectedStudent.value = 'Minh'
 
@@ -70,7 +70,7 @@ describe('App', () => {
 
   it('does not show setup when sheet is linked', async () => {
     mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
-    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1' }
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
     studentRoster.value = ['Minh']
     selectedStudent.value = 'Minh'
 

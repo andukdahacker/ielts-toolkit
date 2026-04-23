@@ -129,23 +129,26 @@ function createScoreSheet(studentNames: string[]): SheetInfo {
   }
 }
 
-function getLinkedSheet(): SheetInfo | null {
+function getLinkedSheet(): (SheetInfo & { studentColumn: number }) | null {
   const props = PropertiesService.getUserProperties()
   const id = props.getProperty('LINKED_SHEET_ID')
   if (!id) return null
+  const colStr = props.getProperty('LINKED_SHEET_STUDENT_COL')
   return {
     id: id,
     name: props.getProperty('LINKED_SHEET_NAME') || 'Score Sheet',
     url: props.getProperty('LINKED_SHEET_URL') || 'https://docs.google.com/spreadsheets/d/' + id,
+    studentColumn: colStr != null && !isNaN(parseInt(colStr, 10)) ? parseInt(colStr, 10) : 0,
   }
 }
 
-function linkSheet(sheetId: string, sheetName: string, sheetUrl: string): void {
+function linkSheet(sheetId: string, sheetName: string, sheetUrl: string, studentColumn: number): void {
   const props = PropertiesService.getUserProperties()
   props.setProperties({
     'LINKED_SHEET_ID': sheetId,
     'LINKED_SHEET_NAME': sheetName,
     'LINKED_SHEET_URL': sheetUrl,
+    'LINKED_SHEET_STUDENT_COL': String(studentColumn),
   })
 }
 
@@ -154,6 +157,7 @@ function unlinkSheet(): void {
   props.deleteProperty('LINKED_SHEET_ID')
   props.deleteProperty('LINKED_SHEET_NAME')
   props.deleteProperty('LINKED_SHEET_URL')
+  props.deleteProperty('LINKED_SHEET_STUDENT_COL')
 }
 
 function getStudentRoster(): string[] {
@@ -171,7 +175,8 @@ function getStudentRoster(): string[] {
   const lastRow = sheet.getLastRow()
   if (lastRow <= 1) return []
 
-  const range = sheet.getRange(2, 1, lastRow - 1, 1)
+  const col = linked.studentColumn + 1  // 0-based → 1-based for getRange
+  const range = sheet.getRange(2, col, lastRow - 1, 1)
   const values = range.getValues()
   const names: string[] = []
 
@@ -183,4 +188,83 @@ function getStudentRoster(): string[] {
   }
 
   return names
+}
+
+function addStudentToRoster(name: string): string[] {
+  if (!name || !name.trim()) throw new Error('Student name is required')
+  const trimmed = name.trim()
+  if (trimmed.length > 100) throw new Error('Student name must be 100 characters or fewer')
+
+  const linked = getLinkedSheet()
+  if (!linked) throw new Error('No Score Sheet linked')
+
+  let spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet
+  try {
+    spreadsheet = SpreadsheetApp.openById(linked.id)
+  } catch {
+    throw new Error('Score Sheet is no longer accessible. Try relinking your Sheet.')
+  }
+
+  const sheet = spreadsheet.getSheets()[0]
+  const col = linked.studentColumn + 1  // 1-based for getRange
+
+  const lock = LockService.getScriptLock()
+  if (!lock.tryLock(10000)) {
+    throw new Error('Sheet is busy, try again in a moment')
+  }
+
+  try {
+    // Find last occupied row in the SPECIFIC student column (not sheet-wide getLastRow)
+    const sheetLastRow = sheet.getLastRow()
+    let columnLastRow = 1  // default: only header exists
+    if (sheetLastRow > 1) {
+      const colValues = sheet.getRange(2, col, sheetLastRow - 1, 1).getValues()
+      for (let i = colValues.length - 1; i >= 0; i--) {
+        if (colValues[i][0] != null && String(colValues[i][0]).trim() !== '') {
+          columnLastRow = i + 2  // +2: skip header row (1-based) + array offset
+          break
+        }
+      }
+    }
+
+    // Server-side duplicate check (case-insensitive)
+    if (columnLastRow > 1) {
+      const existingNames = sheet.getRange(2, col, columnLastRow - 1, 1).getValues()
+      for (let i = 0; i < existingNames.length; i++) {
+        if (String(existingNames[i][0]).trim().toLowerCase() === trimmed.toLowerCase()) {
+          throw new Error('A student with this name already exists in the Sheet')
+        }
+      }
+    }
+
+    const targetRow = columnLastRow + 1
+    const targetCell = sheet.getRange(targetRow, col)
+    targetCell.setValue(_sheetsSanitize(trimmed))
+
+    // Copy formatting from the row above to match existing sheet structure (AC7)
+    if (columnLastRow >= 2) {
+      const sourceFormat = sheet.getRange(columnLastRow, col)
+      sourceFormat.copyFormatToRange(sheet, col, col, targetRow, targetRow)
+    }
+  } finally {
+    lock.releaseLock()
+  }
+
+  // Re-read and return full roster
+  return getStudentRoster()
+}
+
+function getSheetMeta(sheetUrl: string): { id: string; name: string; url: string } {
+  const id = _sheetsParseUrl(sheetUrl)
+  let spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet
+  try {
+    spreadsheet = SpreadsheetApp.openById(id)
+  } catch {
+    throw new Error("Can't access this Sheet. It may have been deleted or you lost access.")
+  }
+  return {
+    id: spreadsheet.getId(),
+    name: spreadsheet.getName(),
+    url: spreadsheet.getUrl(),
+  }
 }

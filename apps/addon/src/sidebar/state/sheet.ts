@@ -6,6 +6,7 @@ import {
   createScoreSheet as gasCreateScoreSheet,
   linkSheet as gasLinkSheet,
   unlinkSheet as gasUnlinkSheet,
+  getSheetMeta as gasGetSheetMeta,
 } from '../lib/gas'
 import { studentRoster, loadRoster } from './students'
 
@@ -19,13 +20,15 @@ export type SetupStep =
   | 'creating'
   | 'done'
 
-export const linkedSheet = signal<{ id: string; name: string; url: string } | null>(null)
+export const linkedSheet = signal<LinkedSheetInfo | null>(null)
 export const setupStep = signal<SetupStep>('choose-method')
 export const setupError = signal<string | null>(null)
 export const importedColumns = signal<ColumnPreview[] | null>(null)
 export const previewNames = signal<string[] | null>(null)
 export const importSheetUrl = signal<string>('')
 export const asyncBusy = signal<boolean>(false)
+export const setupMode = signal<'create' | 'link'>('create')
+export const selectedColumnIndex = signal<number>(-1)
 
 const stepHistory: SetupStep[] = []
 
@@ -36,7 +39,10 @@ export function startCreateNew(): void {
 }
 
 export function startLinkExisting(): void {
-  // Disabled — Story 1.4
+  setupMode.value = 'link'
+  stepHistory.push(setupStep.value)
+  setupError.value = null
+  setupStep.value = 'import-url'
 }
 
 export function selectImportFromSheet(): void {
@@ -81,6 +87,7 @@ export async function submitSheetUrl(url: string): Promise<void> {
 export async function selectColumn(index: number): Promise<void> {
   if (asyncBusy.value) return
   setupError.value = null
+  selectedColumnIndex.value = index
   asyncBusy.value = true
   try {
     const names = await gasExtractNames(importSheetUrl.value, index)
@@ -106,15 +113,37 @@ export async function confirmNames(names: string[]): Promise<void> {
   asyncBusy.value = true
 
   try {
-    const sheetInfo = await gasCreateScoreSheet(names)
-    await gasLinkSheet(sheetInfo.id, sheetInfo.name, sheetInfo.url)
-    linkedSheet.value = sheetInfo
-    studentRoster.value = names
-    stepHistory.push(previousStep)
-    setupStep.value = 'done'
+    if (setupMode.value === 'link') {
+      let meta: { id: string; name: string; url: string }
+      try {
+        meta = await gasGetSheetMeta(importSheetUrl.value)
+      } catch (err) {
+        setupStep.value = previousStep
+        setupError.value = err instanceof Error
+          ? err.message
+          : "Can't access this Sheet anymore. Try a different Sheet."
+        asyncBusy.value = false
+        return
+      }
+
+      await gasLinkSheet(meta.id, meta.name, meta.url, selectedColumnIndex.value)
+      linkedSheet.value = { ...meta, studentColumn: selectedColumnIndex.value }
+      studentRoster.value = names
+      stepHistory.push(previousStep)
+      setupStep.value = 'done'
+    } else {
+      const sheetInfo = await gasCreateScoreSheet(names)
+      await gasLinkSheet(sheetInfo.id, sheetInfo.name, sheetInfo.url, 0)
+      linkedSheet.value = { ...sheetInfo, studentColumn: 0 }
+      studentRoster.value = names
+      stepHistory.push(previousStep)
+      setupStep.value = 'done'
+    }
   } catch (err) {
     setupStep.value = previousStep
-    setupError.value = err instanceof Error ? err.message : 'Failed to create Score Sheet'
+    setupError.value = err instanceof Error
+      ? err.message
+      : (setupMode.value === 'link' ? 'Failed to link Sheet' : 'Failed to create Score Sheet')
   } finally {
     asyncBusy.value = false
   }
@@ -168,6 +197,8 @@ export function resetSetup(): void {
   previewNames.value = null
   importSheetUrl.value = ''
   asyncBusy.value = false
+  setupMode.value = 'create'
+  selectedColumnIndex.value = -1
   stepHistory.length = 0
 }
 

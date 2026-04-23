@@ -17,7 +17,10 @@ import {
   setupError,
   importedColumns,
   previewNames,
+  setupMode,
+  importSheetUrl,
   resetSetup,
+  startLinkExisting,
 } from '../state/sheet'
 import { SetupSheet } from './setup-sheet'
 
@@ -34,10 +37,13 @@ describe('SetupSheet', () => {
       expect(screen.getByText('Link existing Sheet')).toBeTruthy()
     })
 
-    it('link existing sheet button is disabled', () => {
+    it('link existing sheet button is enabled and fires startLinkExisting', () => {
       render(<SetupSheet />)
       const linkBtn = screen.getByText('Link existing Sheet') as HTMLButtonElement
-      expect(linkBtn.disabled).toBe(true)
+      expect(linkBtn.disabled).toBe(false)
+      fireEvent.click(linkBtn)
+      expect(setupStep.value).toBe('import-url')
+      expect(setupMode.value).toBe('link')
     })
 
     it('clicking create transitions to choose-students', () => {
@@ -185,6 +191,55 @@ describe('SetupSheet', () => {
       setupStep.value = 'done'
       const { container } = render(<SetupSheet />)
       expect(container.innerHTML).toBe('')
+    })
+  })
+
+  describe('import-columns fallback', () => {
+    beforeEach(() => {
+      setupStep.value = 'import-columns'
+      importedColumns.value = [
+        { index: 0, header: 'Name', preview: ['Alice'] },
+      ]
+    })
+
+    it('shows "None of these look right" link', () => {
+      render(<SetupSheet />)
+      expect(screen.getByText('None of these look right')).toBeTruthy()
+    })
+
+    it('clicking fallback shows recovery options', () => {
+      render(<SetupSheet />)
+      fireEvent.click(screen.getByText('None of these look right'))
+      expect(screen.getByText(/couldn't detect a student roster/)).toBeTruthy()
+      expect(screen.getByText('Try a different Sheet')).toBeTruthy()
+      expect(screen.getByText('Create new Score Sheet')).toBeTruthy()
+    })
+  })
+
+  describe('link mode labels', () => {
+    it('shows "Link this Sheet" in preview when link mode', () => {
+      setupStep.value = 'import-preview'
+      setupMode.value = 'link'
+      previewNames.value = ['Minh']
+      render(<SetupSheet />)
+      expect(screen.getByText('Link this Sheet')).toBeTruthy()
+    })
+
+    it('shows "Linking your Sheet..." in creating step when link mode', () => {
+      setupStep.value = 'creating'
+      setupMode.value = 'link'
+      render(<SetupSheet />)
+      expect(screen.getByText('Linking your Sheet...')).toBeTruthy()
+    })
+  })
+
+  describe('URL preservation', () => {
+    it('preserves URL on back navigation', () => {
+      importSheetUrl.value = 'https://docs.google.com/spreadsheets/d/abc/edit'
+      setupStep.value = 'import-url'
+      render(<SetupSheet />)
+      const input = screen.getByPlaceholderText(/docs.google.com/) as HTMLInputElement
+      expect(input.value).toBe('https://docs.google.com/spreadsheets/d/abc/edit')
     })
   })
 })

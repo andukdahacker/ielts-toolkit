@@ -5,7 +5,10 @@ import {
   importedColumns,
   previewNames,
   asyncBusy,
+  setupMode,
+  importSheetUrl,
   startCreateNew,
+  startLinkExisting,
   selectImportFromSheet,
   selectManualEntry,
   submitSheetUrl,
@@ -13,6 +16,7 @@ import {
   confirmNames,
   submitManualNames,
   goBack,
+  resetSetup,
 } from '../state/sheet'
 
 function ErrorMessage() {
@@ -46,7 +50,7 @@ function ChooseMethod() {
         <p class="secondary" style={{ fontSize: '12px', marginTop: '4px' }}>Recommended</p>
       </div>
       <div class="block" style={{ marginTop: '8px' }}>
-        <button class="create" disabled title="Coming in next update">
+        <button class="create" onClick={startLinkExisting}>
           Link existing Sheet
         </button>
       </div>
@@ -74,7 +78,7 @@ function ChooseStudents() {
 }
 
 function ImportUrl() {
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(importSheetUrl.value)
 
   return (
     <div>
@@ -99,7 +103,27 @@ function ImportUrl() {
 
 function ImportColumns() {
   const columns = importedColumns.value
+  const [showFallback, setShowFallback] = useState(false)
   if (!columns) return null
+
+  if (showFallback) {
+    return (
+      <div>
+        <BackButton />
+        <p class="gray">We couldn't detect a student roster in this Sheet. Would you like to create a new Score Sheet instead?</p>
+        <div class="block" style={{ marginTop: '8px' }}>
+          <button class="create" onClick={() => { setShowFallback(false); goBack() }}>
+            Try a different Sheet
+          </button>
+        </div>
+        <div class="block" style={{ marginTop: '8px' }}>
+          <button class="action" onClick={() => { resetSetup(); startCreateNew() }}>
+            Create new Score Sheet
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -130,6 +154,18 @@ function ImportColumns() {
           )}
         </div>
       ))}
+      <p style={{ marginTop: '8px' }}>
+        <a
+          href="#"
+          class="secondary"
+          onClick={(e: Event) => {
+            e.preventDefault()
+            setShowFallback(true)
+          }}
+        >
+          None of these look right
+        </a>
+      </p>
     </div>
   )
 }
@@ -154,7 +190,9 @@ function ImportPreview() {
       <ErrorMessage />
       <div style={{ marginTop: '8px' }}>
         <button class="action" onClick={() => confirmNames(names)} disabled={asyncBusy.value}>
-          {asyncBusy.value ? 'Creating...' : 'Confirm'}
+          {asyncBusy.value
+            ? (setupMode.value === 'link' ? 'Linking...' : 'Creating...')
+            : (setupMode.value === 'link' ? 'Link this Sheet' : 'Confirm')}
         </button>
         <button
           style={{ marginLeft: '8px' }}
@@ -194,7 +232,7 @@ function ManualEntry() {
 function Creating() {
   return (
     <div style={{ textAlign: 'center', padding: '24px 0' }}>
-      <p>Creating your Score Sheet...</p>
+      <p>{setupMode.value === 'link' ? 'Linking your Sheet...' : 'Creating your Score Sheet...'}</p>
       <div class="gray">Please wait</div>
     </div>
   )

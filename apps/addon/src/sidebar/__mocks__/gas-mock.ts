@@ -6,15 +6,17 @@ interface MockRunner {
   extractNamesFromColumn(sheetUrl: string, columnIndex: number): void
   createScoreSheet(studentNames: string[]): void
   getLinkedSheet(): void
-  linkSheet(sheetId: string, sheetName: string, sheetUrl: string): void
+  linkSheet(sheetId: string, sheetName: string, sheetUrl: string, studentColumn: number): void
   unlinkSheet(): void
   getStudentRoster(): void
+  addStudentToRoster(name: string): void
+  getSheetMeta(sheetUrl: string): void
   [key: string]: unknown
 }
 
 const mockResponses: Record<string, unknown> = {
   checkBackendHealth: { data: { status: 'ok' } },
-  getLinkedSheet: null,
+  getLinkedSheet: null as null,
   getSheetColumns: [
     { index: 0, header: 'Student Name', preview: ['Minh', 'Trang', 'Anh'] },
     { index: 1, header: 'Class', preview: ['10A', '10A', '10B'] },
@@ -29,6 +31,12 @@ const mockResponses: Record<string, unknown> = {
   linkSheet: undefined,
   unlinkSheet: undefined,
   getStudentRoster: ['Minh', 'Trang', 'Anh', 'Huy', 'Linh'],
+  addStudentToRoster: ['Minh', 'Trang', 'Anh', 'Huy', 'Linh', 'New Student'],
+  getSheetMeta: {
+    id: 'mock-linked-id',
+    name: 'Linked Sheet',
+    url: 'https://docs.google.com/spreadsheets/d/mock-linked-id',
+  },
 }
 
 const mockErrors: Record<string, Error> = {
@@ -76,7 +84,7 @@ function createMockRunner(): MockRunner {
     getLinkedSheet() {
       dispatch('getLinkedSheet')
     },
-    linkSheet(_sheetId: string, _sheetName: string, _sheetUrl: string) {
+    linkSheet(_sheetId: string, _sheetName: string, _sheetUrl: string, _studentColumn: number) {
       dispatch('linkSheet')
     },
     unlinkSheet() {
@@ -84,6 +92,12 @@ function createMockRunner(): MockRunner {
     },
     getStudentRoster() {
       dispatch('getStudentRoster')
+    },
+    addStudentToRoster(_name: string) {
+      dispatch('addStudentToRoster')
+    },
+    getSheetMeta(_sheetUrl: string) {
+      dispatch('getSheetMeta')
     },
   }
 
