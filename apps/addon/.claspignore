@@ -1,0 +1,11 @@
+src/**
+node_modules/**
+*.ts
+*.tsx
+*.test.*
+__mocks__/**
+vite.config.ts
+vitest.config.ts
+tsconfig*.json
+package.json
+pnpm-lock.yaml

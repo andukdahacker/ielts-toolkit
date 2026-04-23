@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22
-last_updated: 2026-04-22T22:00:00Z
+last_updated: 2026-04-22T22:58:00Z
 project: ielts-toolkit
 project_key: NOKEY
 tracking_system: file-system
@@ -45,7 +45,7 @@ development_status:
   # Epic 1: Project Foundation & Teacher Onboarding
   epic-1: in-progress
   1-1-initialize-monorepo-and-deploy-backend-skeleton: done
-  1-2-apps-script-add-on-shell-and-sidebar-pipeline: backlog
+  1-2-apps-script-add-on-shell-and-sidebar-pipeline: done
   1-3-create-new-score-sheet-with-student-import: backlog
   1-4-link-existing-sheet-and-roster-management: backlog
   epic-1-retrospective: optional

@@ -5,6 +5,8 @@ dist/
 !.env.example
 *.log
 .DS_Store
+.clasp.json
+*.tsbuildinfo
 .turbo/
 .claude/
 .opencode/
