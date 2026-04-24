@@ -36,6 +36,8 @@
 
 generated: 2026-04-22
 last_updated: 2026-04-24
+# Story 2-2 review complete: 2026-04-24
+# Story 2-2 created: 2026-04-24
 # Story 2-1 started: 2026-04-23
 # Story 2-1 created: 2026-04-23
 project: ielts-toolkit
@@ -55,7 +57,7 @@ development_status:
   # Epic 2: Score Entry & Sheet Tracking
   epic-2: in-progress
   2-1-sidebar-navigation-and-student-context: done
-  2-2-manual-score-entry-and-save-to-sheet: backlog
+  2-2-manual-score-entry-and-save-to-sheet: done
   epic-2-retrospective: optional
 
   # Epic 3: AI Essay Grading & Feedback

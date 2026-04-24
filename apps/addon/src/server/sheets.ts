@@ -254,6 +254,105 @@ function addStudentToRoster(name: string): string[] {
   return getStudentRoster()
 }
 
+const TASK_TYPE_LABELS: Record<string, string> = {
+  task1_academic: 'Task 1 Academic',
+  task1_general: 'Task 1 General',
+  task2: 'Task 2',
+}
+
+function writeScoresToSheet(
+  studentName: string,
+  scores: {
+    overall: number
+    taskAchievement: number
+    coherenceAndCohesion: number
+    lexicalResource: number
+    grammaticalRangeAndAccuracy: number
+  },
+  taskType: string
+): void {
+  const linked = getLinkedSheet()
+  if (!linked) throw new Error('No Score Sheet linked')
+
+  let spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet
+  try {
+    spreadsheet = SpreadsheetApp.openById(linked.id)
+  } catch {
+    throw new Error('Score Sheet is no longer accessible')
+  }
+
+  const sheet = spreadsheet.getSheets()[0]
+
+  const lock = LockService.getScriptLock()
+  if (!lock.tryLock(10000)) {
+    throw new Error('Sheet is busy, try again in a moment')
+  }
+
+  try {
+    // Find the student row
+    const studentCol = linked.studentColumn + 1 // 0-based → 1-based
+    const lastRow = sheet.getLastRow()
+    let studentRow = -1
+
+    if (lastRow > 1) {
+      const names = sheet.getRange(2, studentCol, lastRow - 1, 1).getValues()
+      for (let i = 0; i < names.length; i++) {
+        if (String(names[i][0]).trim() === studentName) {
+          studentRow = i + 2 // 1-based, skip header
+          break
+        }
+      }
+    }
+
+    if (studentRow === -1) {
+      throw new Error('Student not found in Sheet')
+    }
+
+    // Determine assignment column header
+    const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd')
+    const taskLabel = TASK_TYPE_LABELS[taskType] || taskType
+    const headerLabel = today + ' ' + taskLabel
+
+    // Find or create the column group
+    const lastCol = sheet.getLastColumn()
+    let overallCol = -1
+
+    if (lastCol > 0) {
+      const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+      for (let c = 0; c < headers.length; c++) {
+        if (String(headers[c]).trim() === headerLabel) {
+          overallCol = c + 1 // 1-based
+          break
+        }
+      }
+    }
+
+    if (overallCol === -1) {
+      // Append new column group after last used column
+      overallCol = lastCol + 1
+      sheet.getRange(1, overallCol).setValue(headerLabel)
+      sheet.getRange(1, overallCol + 1).setValue('TA')
+      sheet.getRange(1, overallCol + 2).setValue('CC')
+      sheet.getRange(1, overallCol + 3).setValue('LR')
+      sheet.getRange(1, overallCol + 4).setValue('GRA')
+
+      // Bold the new headers
+      const newHeaders = sheet.getRange(1, overallCol, 1, 5)
+      newHeaders.setFontWeight('bold')
+    }
+
+    // Write scores to the student row
+    const scoreValues = [
+      [scores.overall, scores.taskAchievement, scores.coherenceAndCohesion, scores.lexicalResource, scores.grammaticalRangeAndAccuracy],
+    ]
+    const targetRange = sheet.getRange(studentRow, overallCol, 1, 5)
+    targetRange.setValues(scoreValues)
+    targetRange.setNumberFormat('0.0')
+  } finally {
+    lock.releaseLock()
+  }
+}
+
 function getSheetMeta(sheetUrl: string): { id: string; name: string; url: string } {
   const id = _sheetsParseUrl(sheetUrl)
   let spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet

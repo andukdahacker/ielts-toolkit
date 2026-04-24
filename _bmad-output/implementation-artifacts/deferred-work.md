@@ -19,3 +19,8 @@
 ## Deferred from: code review of 2-1-sidebar-navigation-and-student-context (2026-04-23)
 
 - F9: No focus restoration when ConfirmDialog closes — when modal closes, focus should return to the element that triggered it (standard WAI-ARIA dialog pattern). Low priority, pre-existing pattern.
+
+## Deferred from: code review of 2-2-manual-score-entry-and-save-to-sheet (2026-04-24)
+
+- **W8:** No server-side `taskType` validation in `writeScoresToSheet` — accepts any string, falls back to raw value as column header. Pre-existing gap in the GAS → Sheet boundary.
+- **W9:** Arrow key support for stepper controls in `score-editor.tsx` — accessibility enhancement (Up/Down keys for increment/decrement). Beyond current AC scope.

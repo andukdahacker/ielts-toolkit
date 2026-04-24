@@ -48,3 +48,7 @@ export function addStudentToRoster(name: string) {
 export function getSheetMeta(sheetUrl: string) {
   return callGas<{ id: string; name: string; url: string }>((r) => r.getSheetMeta(sheetUrl))
 }
+
+export function saveScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string) {
+  return callGas<void>((r) => r.writeScoresToSheet(studentName, scores, taskType))
+}

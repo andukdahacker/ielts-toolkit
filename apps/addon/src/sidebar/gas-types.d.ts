@@ -29,6 +29,7 @@ declare namespace google {
       getStudentRoster(): void
       addStudentToRoster(name: string): void
       getSheetMeta(sheetUrl: string): void
+      writeScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string): void
       [key: string]: unknown
     }
     const run: RunnerWithHandlers

@@ -1,6 +1,6 @@
 import { ConfirmDialog } from './confirm-dialog'
 import { selectedStudent, pendingNavigation, confirmNavigation, cancelNavigation } from '../state/students'
-import { discardChanges } from '../state/scores'
+import { discardChanges, saveScores, saveStatus } from '../state/scores'
 
 export function UnsavedPrompt() {
   if (pendingNavigation.value === null) return null
@@ -8,6 +8,18 @@ export function UnsavedPrompt() {
   const studentName = selectedStudent.value ?? 'this student'
 
   const actions = [
+    {
+      label: 'Save',
+      primary: true,
+      onClick: async () => {
+        await saveScores()
+        if (saveStatus.value === 'error') {
+          cancelNavigation()
+        } else {
+          confirmNavigation()
+        }
+      },
+    },
     {
       label: 'Discard',
       onClick: () => {

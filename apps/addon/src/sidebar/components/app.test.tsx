@@ -10,6 +10,7 @@ vi.mock('../lib/gas', () => ({
   linkSheet: vi.fn(),
   unlinkSheet: vi.fn(),
   getStudentRoster: vi.fn(),
+  saveScoresToSheet: vi.fn(),
 }))
 
 import { connectionStatus } from '../state/connection'
@@ -55,7 +56,7 @@ describe('App', () => {
     expect(screen.getByText('Set up your Score Sheet to get started')).toBeTruthy()
   })
 
-  it('shows grading-ready state when sheet is linked', async () => {
+  it('shows grading-ready state when sheet is linked with student selected', async () => {
     mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
     linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
     studentRoster.value = ['Minh', 'Trang']
@@ -65,6 +66,50 @@ describe('App', () => {
 
     expect(screen.getByText('Test Sheet')).toBeTruthy()
     expect(screen.getByText('2 students')).toBeTruthy()
+  })
+
+  it('ScoreEditor renders when student is selected', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh', 'Trang']
+    selectedStudent.value = 'Minh'
+
+    render(<App />)
+
+    expect(screen.getByText('Task Achievement')).toBeTruthy()
+    expect(screen.getByText('Overall')).toBeTruthy()
+  })
+
+  it('SaveButton renders when student is selected', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh', 'Trang']
+    selectedStudent.value = 'Minh'
+
+    render(<App />)
+
+    expect(screen.getByText('Save to Sheet')).toBeTruthy()
+  })
+
+  it('TaskTypePicker renders when student is selected', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh', 'Trang']
+    selectedStudent.value = 'Minh'
+
+    render(<App />)
+
+    expect(screen.getByLabelText('Task type')).toBeTruthy()
+  })
+
+  it('shows EmptyState when sheet linked but no student selected', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = []
+    selectedStudent.value = null
+
+    render(<App />)
+
     expect(screen.getByText('No scores yet — grade your first essay to get started')).toBeTruthy()
   })
 

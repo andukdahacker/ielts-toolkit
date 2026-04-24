@@ -11,6 +11,7 @@ interface MockRunner {
   getStudentRoster(): void
   addStudentToRoster(name: string): void
   getSheetMeta(sheetUrl: string): void
+  writeScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string): void
   [key: string]: unknown
 }
 
@@ -37,6 +38,7 @@ const mockResponses: Record<string, unknown> = {
     name: 'Linked Sheet',
     url: 'https://docs.google.com/spreadsheets/d/mock-linked-id',
   },
+  writeScoresToSheet: undefined,
 }
 
 const mockErrors: Record<string, Error> = {
@@ -98,6 +100,9 @@ function createMockRunner(): MockRunner {
     },
     getSheetMeta(_sheetUrl: string) {
       dispatch('getSheetMeta')
+    },
+    writeScoresToSheet(_studentName: string, _scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, _taskType: string) {
+      dispatch('writeScoresToSheet')
     },
   }
 
