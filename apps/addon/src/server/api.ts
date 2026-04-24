@@ -1,12 +1,13 @@
-function callApi(method: string, path: string, body?: unknown): unknown {
+function callApi(method: string, path: string, body?: unknown, requireAuth = true): unknown {
   const baseUrl = PropertiesService.getScriptProperties().getProperty('API_BASE_URL')
   if (!baseUrl) throw new Error('API_BASE_URL not configured in Script Properties')
 
-  const token = ScriptApp.getIdentityToken()
-  if (!token) throw new Error('Identity token unavailable — check OAuth scopes')
+  const headers: Record<string, string> = {}
 
-  const headers: Record<string, string> = {
-    'Authorization': `Bearer ${token}`,
+  if (requireAuth) {
+    const token = ScriptApp.getIdentityToken()
+    if (!token) throw new Error('Identity token unavailable — check OAuth scopes')
+    headers['Authorization'] = `Bearer ${token}`
   }
 
   const options: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {

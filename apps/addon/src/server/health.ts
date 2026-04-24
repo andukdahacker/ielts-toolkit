@@ -1,3 +1,3 @@
 function checkBackendHealth(): unknown {
-  return callApi('GET', '/health')
+  return callApi('GET', '/health', undefined, false)
 }
