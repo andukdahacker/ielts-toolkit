@@ -1,4 +1,4 @@
-import { studentRoster, selectedStudent, studentIndex, selectStudent } from '../state/students'
+import { studentRoster, selectedStudent, selectStudent } from '../state/students'
 
 export function StudentPicker() {
   const roster = studentRoster.value
@@ -21,11 +21,6 @@ export function StudentPicker() {
           ))}
         </select>
       </div>
-      {studentIndex.value >= 0 && (
-        <p class="gray">
-          Student {studentIndex.value + 1} of {roster.length}
-        </p>
-      )}
     </div>
   )
 }

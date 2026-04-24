@@ -15,3 +15,7 @@
 ## Deferred from: code review of 1-3-create-new-score-sheet-with-student-import (2026-04-23)
 
 - **W7:** `goBack()` callable during `creating` step via external code — currently UI-guarded (Creating component has no Back button) but no programmatic guard in the action function. If a future keyboard shortcut or test calls `goBack()` mid-creation, state becomes inconsistent. Low risk while UI is the only caller.
+
+## Deferred from: code review of 2-1-sidebar-navigation-and-student-context (2026-04-23)
+
+- F9: No focus restoration when ConfirmDialog closes — when modal closes, focus should return to the element that triggered it (standard WAI-ARIA dialog pattern). Low priority, pre-existing pattern.

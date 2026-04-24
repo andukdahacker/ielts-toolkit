@@ -6,7 +6,13 @@ vi.mock('../lib/gas', () => ({
   addStudentToRoster: vi.fn(),
 }))
 
-import { studentRoster, selectedStudent, studentIndex, loadRoster, selectStudent, addStudent, addingStudent, addStudentError } from './students'
+import {
+  studentRoster, selectedStudent, studentIndex, loadRoster, selectStudent,
+  addStudent, addingStudent, addStudentError, pendingNavigation,
+  canNavigateNext, canNavigatePrev, navigateNext, navigatePrev,
+  confirmNavigation, cancelNavigation,
+} from './students'
+import { currentScores, savedScores, resetScores } from './scores'
 import { getStudentRoster, addStudentToRoster } from '../lib/gas'
 
 const mockGetStudentRoster = vi.mocked(getStudentRoster)
@@ -18,6 +24,9 @@ describe('students state', () => {
     selectedStudent.value = null
     addingStudent.value = false
     addStudentError.value = null
+    pendingNavigation.value = null
+    resetScores()
+    sessionStorage.clear()
     vi.clearAllMocks()
   })
 
@@ -147,6 +156,150 @@ describe('students state', () => {
       await addStudent('Huy')
       expect(addStudentError.value).toBe('Sheet is busy')
       expect(addingStudent.value).toBe(false)
+    })
+  })
+
+  describe('canNavigateNext / canNavigatePrev', () => {
+    it('both false when no student selected', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      expect(canNavigateNext.value).toBe(false)
+      expect(canNavigatePrev.value).toBe(false)
+    })
+
+    it('canNavigatePrev false on first student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      expect(canNavigatePrev.value).toBe(false)
+      expect(canNavigateNext.value).toBe(true)
+    })
+
+    it('canNavigateNext false on last student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Anh'
+      expect(canNavigateNext.value).toBe(false)
+      expect(canNavigatePrev.value).toBe(true)
+    })
+
+    it('both true for mid-roster student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Trang'
+      expect(canNavigateNext.value).toBe(true)
+      expect(canNavigatePrev.value).toBe(true)
+    })
+  })
+
+  describe('navigateNext / navigatePrev', () => {
+    it('navigateNext advances to next student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      navigateNext()
+      expect(selectedStudent.value).toBe('Trang')
+    })
+
+    it('navigatePrev goes to previous student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Trang'
+      navigatePrev()
+      expect(selectedStudent.value).toBe('Minh')
+    })
+
+    it('navigateNext does nothing on last student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Anh'
+      navigateNext()
+      expect(selectedStudent.value).toBe('Anh')
+    })
+
+    it('navigatePrev does nothing on first student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      navigatePrev()
+      expect(selectedStudent.value).toBe('Minh')
+    })
+
+    it('sets pendingNavigation when unsaved changes exist', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      currentScores.value = { ...currentScores.value, taskAchievement: 7.0 }
+
+      navigateNext()
+
+      expect(pendingNavigation.value).toBe('next')
+      expect(selectedStudent.value).toBe('Minh')
+    })
+
+    it('sets pendingNavigation to prev when navigating back with unsaved changes', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Trang'
+      currentScores.value = { ...currentScores.value, overall: 6.5 }
+
+      navigatePrev()
+
+      expect(pendingNavigation.value).toBe('prev')
+      expect(selectedStudent.value).toBe('Trang')
+    })
+  })
+
+  describe('confirmNavigation / cancelNavigation', () => {
+    it('confirmNavigation proceeds to next student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      pendingNavigation.value = 'next'
+
+      confirmNavigation()
+
+      expect(selectedStudent.value).toBe('Trang')
+      expect(pendingNavigation.value).toBeNull()
+    })
+
+    it('confirmNavigation proceeds to previous student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Trang'
+      pendingNavigation.value = 'prev'
+
+      confirmNavigation()
+
+      expect(selectedStudent.value).toBe('Minh')
+      expect(pendingNavigation.value).toBeNull()
+    })
+
+    it('cancelNavigation clears pending and stays on current student', () => {
+      studentRoster.value = ['Minh', 'Trang', 'Anh']
+      selectedStudent.value = 'Minh'
+      pendingNavigation.value = 'next'
+
+      cancelNavigation()
+
+      expect(selectedStudent.value).toBe('Minh')
+      expect(pendingNavigation.value).toBeNull()
+    })
+  })
+
+  describe('session persistence', () => {
+    it('selectStudent stores name in sessionStorage', () => {
+      studentRoster.value = ['Minh', 'Trang']
+      selectStudent('Trang')
+      expect(sessionStorage.getItem('ielts_selected_student')).toBe('Trang')
+    })
+
+    it('loadRoster restores from sessionStorage if name in roster', async () => {
+      sessionStorage.setItem('ielts_selected_student', 'Trang')
+      mockGetStudentRoster.mockResolvedValueOnce(['Minh', 'Trang', 'Anh'])
+      await loadRoster()
+      expect(selectedStudent.value).toBe('Trang')
+    })
+
+    it('loadRoster ignores stale sessionStorage name not in roster', async () => {
+      sessionStorage.setItem('ielts_selected_student', 'Deleted Student')
+      mockGetStudentRoster.mockResolvedValueOnce(['Minh', 'Trang'])
+      await loadRoster()
+      expect(selectedStudent.value).toBe('Minh')
+    })
+
+    it('loadRoster persists first student when no stored selection', async () => {
+      mockGetStudentRoster.mockResolvedValueOnce(['Minh', 'Trang'])
+      await loadRoster()
+      expect(sessionStorage.getItem('ielts_selected_student')).toBe('Minh')
     })
   })
 })

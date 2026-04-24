@@ -40,3 +40,66 @@
   margin-bottom: 16px;
   color: #5f6368;
 }
+
+/* Confirm dialog overlay */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Confirm dialog card */
+.confirm-dialog {
+  background: #fff;
+  padding: 16px;
+  border-radius: 4px;
+  max-width: 280px;
+  width: calc(100% - 32px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.confirm-dialog p {
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.confirm-dialog .confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Student nav */
+.student-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.student-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #444;
+  font-size: 13px;
+}
+
+.student-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.student-nav button:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.student-nav .nav-position {
+  font-size: 12px;
+}

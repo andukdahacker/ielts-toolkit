@@ -31,13 +31,6 @@ describe('StudentPicker', () => {
     expect(options[2].textContent).toBe('Anh')
   })
 
-  it('shows student position context', () => {
-    studentRoster.value = ['Minh', 'Trang', 'Anh']
-    selectedStudent.value = 'Trang'
-    render(<StudentPicker />)
-    expect(screen.getByText('Student 2 of 3')).toBeTruthy()
-  })
-
   it('updates selection on change', () => {
     studentRoster.value = ['Minh', 'Trang', 'Anh']
     selectedStudent.value = 'Minh'

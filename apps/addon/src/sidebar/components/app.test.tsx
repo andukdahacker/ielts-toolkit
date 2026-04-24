@@ -68,6 +68,18 @@ describe('App', () => {
     expect(screen.getByText('No scores yet — grade your first essay to get started')).toBeTruthy()
   })
 
+  it('renders StudentNav in grading-ready state', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh', 'Trang']
+    selectedStudent.value = 'Minh'
+
+    render(<App />)
+
+    expect(screen.getByText('Student 1 of 2')).toBeTruthy()
+    expect(screen.getByLabelText('Next student')).toBeTruthy()
+  })
+
   it('does not show setup when sheet is linked', async () => {
     mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
     linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
