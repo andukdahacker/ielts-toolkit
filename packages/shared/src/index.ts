@@ -8,7 +8,7 @@ export {
   BAND_RANGE,
   bandScoresSchema,
   type BandScores,
-} from './ielts'
+} from './ielts.js'
 
 export {
   gradeRequestSchema,
@@ -21,7 +21,7 @@ export {
   type JobStatus,
   scoreWritePayloadSchema,
   type ScoreWritePayload,
-} from './api'
+} from './api.js'
 
 export {
   ERROR_CODES,
@@ -35,4 +35,4 @@ export {
   ValidationError,
   NotFoundError,
   GradingError,
-} from './errors'
+} from './errors.js'

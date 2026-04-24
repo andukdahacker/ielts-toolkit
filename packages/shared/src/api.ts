@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { bandScoresSchema, taskTypeSchema } from './ielts'
-import { appErrorSchema } from './errors'
+import { bandScoresSchema, taskTypeSchema } from './ielts.js'
+import { appErrorSchema } from './errors.js'
 
 export const gradingCommentSchema = z.object({
   text: z.string(),
