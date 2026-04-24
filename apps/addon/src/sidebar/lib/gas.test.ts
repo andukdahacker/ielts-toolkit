@@ -33,14 +33,14 @@ function createMockRun() {
 
 function simulateSuccess(mockRun: Record<string, ReturnType<typeof vi.fn>>, fnName: string, result: unknown) {
   mockRun[fnName].mockImplementation(() => {
-    const handler = mockRun.withSuccessHandler.mock.calls.at(-1)[0]
+    const handler = mockRun.withSuccessHandler.mock.calls.at(-1)![0]
     handler(result)
   })
 }
 
 function simulateFailure(mockRun: Record<string, ReturnType<typeof vi.fn>>, fnName: string, error: Error) {
   mockRun[fnName].mockImplementation(() => {
-    const handler = mockRun.withFailureHandler.mock.calls.at(-1)[0]
+    const handler = mockRun.withFailureHandler.mock.calls.at(-1)![0]
     handler(error)
   })
 }
