@@ -4,13 +4,13 @@ import { appErrorSchema } from './errors'
 
 export const gradingCommentSchema = z.object({
   text: z.string(),
-  anchorText: z.string().optional(),
-  category: z.string().optional(),
+  anchorText: z.string(),
+  category: z.string(),
 })
 export type GradingComment = z.infer<typeof gradingCommentSchema>
 
 export const gradeRequestSchema = z.object({
-  essayText: z.string().min(1),
+  essayText: z.string().min(1).max(15_000),
   taskType: taskTypeSchema,
   studentName: z.string().optional(),
 })

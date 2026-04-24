@@ -24,3 +24,7 @@
 
 - **W8:** No server-side `taskType` validation in `writeScoresToSheet` — accepts any string, falls back to raw value as column header. Pre-existing gap in the GAS → Sheet boundary.
 - **W9:** Arrow key support for stepper controls in `score-editor.tsx` — accessibility enhancement (Up/Down keys for increment/decrement). Beyond current AC scope.
+
+## Deferred from: code review of 3-1-grading-backend-gemini-proxy-and-async-job-pipeline (2026-04-24)
+
+- **W10:** `withTimeout` in `gemini.ts` leaks the underlying Gemini promise — no AbortController/AbortSignal used; timed-out requests continue consuming resources in the background. Depends on Google Generative AI SDK supporting AbortSignal.

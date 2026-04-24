@@ -12,6 +12,9 @@ import dbPlugin from './plugins/db.js'
 import authPlugin from './middleware/auth.js'
 import rateLimitPlugin from './middleware/rate-limit.js'
 import healthRoutes from './routes/health.js'
+import gradeRoutes from './routes/grade.js'
+import { createGeminiClient } from './services/gemini.js'
+import { cleanupStaleJobs } from './services/grading.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -52,6 +55,22 @@ export async function buildApp(opts: BuildAppOptions = {}) {
 
   // Routes
   await app.register(healthRoutes)
+
+  const geminiClient = createGeminiClient(app.config.GEMINI_API_KEY)
+  await app.register(gradeRoutes({ geminiClient }))
+
+  // Stale job cleanup — runs every 60s
+  let cleanupInterval: ReturnType<typeof setInterval> | undefined
+  app.addHook('onReady', async () => {
+    cleanupInterval = setInterval(() => {
+      cleanupStaleJobs(app.db).catch((err) =>
+        app.log.error(err, 'Stale job cleanup failed'),
+      )
+    }, 60_000)
+  })
+  app.addHook('onClose', async () => {
+    if (cleanupInterval) clearInterval(cleanupInterval)
+  })
 
   return app
 }

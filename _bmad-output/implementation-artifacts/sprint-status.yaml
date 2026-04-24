@@ -36,6 +36,9 @@
 
 generated: 2026-04-22
 last_updated: 2026-04-24
+# Story 3-1 review complete: 2026-04-24
+# Story 3-1 started: 2026-04-24
+# Story 3-1 created: 2026-04-24
 # Story 2-2 review complete: 2026-04-24
 # Story 2-2 created: 2026-04-24
 # Story 2-1 started: 2026-04-23
@@ -61,8 +64,8 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: AI Essay Grading & Feedback
-  epic-3: backlog
-  3-1-grading-backend-gemini-proxy-and-async-job-pipeline: backlog
+  epic-3: in-progress
+  3-1-grading-backend-gemini-proxy-and-async-job-pipeline: done
   3-2-grading-sidebar-initiate-poll-and-display-results: backlog
   3-3-doc-comment-insertion-and-feedback-summary: backlog
   3-4-comment-management-and-re-grading: backlog

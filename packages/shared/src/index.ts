@@ -34,4 +34,5 @@ export {
   AuthError,
   ValidationError,
   NotFoundError,
+  GradingError,
 } from './errors'

@@ -25,6 +25,7 @@ export interface GradingJobTable {
   status: Generated<string>
   taskType: string
   essayText: string
+  studentName: string | null
   resultScores: ColumnType<unknown | null, string | undefined, string | undefined>
   resultComments: ColumnType<unknown | null, string | undefined, string | undefined>
   errorCode: string | null

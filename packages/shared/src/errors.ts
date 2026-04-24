@@ -63,3 +63,10 @@ export class NotFoundError extends DomainError {
     this.name = 'NotFoundError'
   }
 }
+
+export class GradingError extends DomainError {
+  constructor(message: string, retryable = true) {
+    super('GRADING_FAILED', message, retryable)
+    this.name = 'GradingError'
+  }
+}
