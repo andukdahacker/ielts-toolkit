@@ -4,6 +4,15 @@ vi.mock('../lib/gas', () => ({
   checkBackendHealth: vi.fn(),
   getStudentRoster: vi.fn(),
   saveScoresToSheet: vi.fn(),
+  logScoreOverrides: vi.fn().mockResolvedValue(undefined),
+  submitGrade: vi.fn(),
+  pollGradingStatus: vi.fn(),
+  getActiveGradingJob: vi.fn(),
+  getEssayText: vi.fn(),
+}))
+
+vi.mock('../lib/polling', () => ({
+  startPolling: vi.fn().mockReturnValue({ cancel: vi.fn() }),
 }))
 
 import {

@@ -52,3 +52,23 @@ export function getSheetMeta(sheetUrl: string) {
 export function saveScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string) {
   return callGas<void>((r) => r.writeScoresToSheet(studentName, scores, taskType))
 }
+
+export function submitGrade(essayText: string, taskType: string, studentName: string, idempotencyKey: string) {
+  return callGas<{ data: { jobId: string } }>((r) => r.submitGrade(essayText, taskType, studentName, idempotencyKey))
+}
+
+export function pollGradingStatus(jobId: string) {
+  return callGas<{ data: import('@ielts-toolkit/shared').JobStatus }>((r) => r.pollGradingStatus(jobId))
+}
+
+export function getActiveGradingJob() {
+  return callGas<{ data: { jobId: string; status: string; studentName?: string | null; result?: import('@ielts-toolkit/shared').GradeResult; error?: { code: string; message: string } } | null }>((r) => r.getActiveGradingJob())
+}
+
+export function getEssayText() {
+  return callGas<string>((r) => r.getEssayText())
+}
+
+export function logScoreOverrides(jobId: string, overrides: Array<{ criterion: string; before: number; after: number }>) {
+  return callGas<void>((r) => r.logScoreOverrides(jobId, overrides))
+}

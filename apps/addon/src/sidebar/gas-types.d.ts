@@ -30,6 +30,11 @@ declare namespace google {
       addStudentToRoster(name: string): void
       getSheetMeta(sheetUrl: string): void
       writeScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string): void
+      submitGrade(essayText: string, taskType: string, studentName: string, idempotencyKey: string): void
+      pollGradingStatus(jobId: string): void
+      getActiveGradingJob(): void
+      getEssayText(): void
+      logScoreOverrides(jobId: string, overrides: Array<{ criterion: string; before: number; after: number }>): void
       [key: string]: unknown
     }
     const run: RunnerWithHandlers

@@ -39,6 +39,11 @@ const mockResponses: Record<string, unknown> = {
     url: 'https://docs.google.com/spreadsheets/d/mock-linked-id',
   },
   writeScoresToSheet: undefined,
+  submitGrade: { data: { jobId: 'mock-job-id-123' } },
+  pollGradingStatus: { data: { status: 'completed', result: { bandScores: { overall: 6.5, taskAchievement: 6.0, coherenceAndCohesion: 6.5, lexicalResource: 7.0, grammaticalRangeAndAccuracy: 6.0 }, comments: [] } } },
+  getActiveGradingJob: { data: null },
+  getEssayText: 'The growth of international tourism has brought significant benefits to many countries...',
+  logScoreOverrides: undefined,
 }
 
 const mockErrors: Record<string, Error> = {
@@ -103,6 +108,21 @@ function createMockRunner(): MockRunner {
     },
     writeScoresToSheet(_studentName: string, _scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, _taskType: string) {
       dispatch('writeScoresToSheet')
+    },
+    submitGrade(_essayText: string, _taskType: string, _studentName: string, _idempotencyKey: string) {
+      dispatch('submitGrade')
+    },
+    pollGradingStatus(_jobId: string) {
+      dispatch('pollGradingStatus')
+    },
+    getActiveGradingJob() {
+      dispatch('getActiveGradingJob')
+    },
+    getEssayText() {
+      dispatch('getEssayText')
+    },
+    logScoreOverrides(_jobId: string, _overrides: Array<{ criterion: string; before: number; after: number }>) {
+      dispatch('logScoreOverrides')
     },
   }
 

@@ -35,7 +35,10 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22
-last_updated: 2026-04-24
+last_updated: 2026-04-28
+# Story 3-2 review complete: 2026-04-28
+# Story 3-2 started: 2026-04-28
+# Story 3-2 created: 2026-04-24
 # Story 3-1 review complete: 2026-04-24
 # Story 3-1 started: 2026-04-24
 # Story 3-1 created: 2026-04-24
@@ -66,7 +69,7 @@ development_status:
   # Epic 3: AI Essay Grading & Feedback
   epic-3: in-progress
   3-1-grading-backend-gemini-proxy-and-async-job-pipeline: done
-  3-2-grading-sidebar-initiate-poll-and-display-results: backlog
+  3-2-grading-sidebar-initiate-poll-and-display-results: done
   3-3-doc-comment-insertion-and-feedback-summary: backlog
   3-4-comment-management-and-re-grading: backlog
   epic-3-retrospective: optional

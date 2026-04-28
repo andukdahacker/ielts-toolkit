@@ -18,6 +18,7 @@ export interface CreateJobResult {
 export interface ActiveJobResult {
   jobId: string
   status: string
+  studentName: string | null
 }
 
 function escapeRegExp(str: string): string {
@@ -248,7 +249,7 @@ export async function getActiveJob(
 
   if (!job) return null
 
-  return { jobId: job.id, status: job.status }
+  return { jobId: job.id, status: job.status, studentName: job.studentName ?? null }
 }
 
 export async function logGradingEvent(

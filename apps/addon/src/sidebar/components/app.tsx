@@ -10,13 +10,17 @@ import { UnsavedPrompt } from './unsaved-prompt'
 import { TaskTypePicker } from './task-type-picker'
 import { ScoreEditor } from './score-editor'
 import { SaveButton } from './save-button'
+import { GradingPanel } from './grading-panel'
 import { connectionStatus, checkConnection } from '../state/connection'
 import { linkedSheet, initializeSheet } from '../state/sheet'
 import { selectedStudent } from '../state/students'
+import { gradingStatus, checkActiveJob } from '../state/grading'
 
 export function App() {
   useEffect(() => {
-    checkConnection().then(() => initializeSheet())
+    checkConnection()
+      .then(() => initializeSheet())
+      .then(() => checkActiveJob())
   }, [])
 
   const hasStudent = selectedStudent.value !== null
@@ -36,8 +40,13 @@ export function App() {
           {hasStudent ? (
             <>
               <TaskTypePicker />
-              <ScoreEditor />
-              <SaveButton />
+              <GradingPanel />
+              {(gradingStatus.value === 'idle' || gradingStatus.value === 'done') && (
+                <>
+                  <ScoreEditor />
+                  <SaveButton />
+                </>
+              )}
             </>
           ) : (
             <EmptyState />

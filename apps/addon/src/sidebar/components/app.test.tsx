@@ -11,11 +11,21 @@ vi.mock('../lib/gas', () => ({
   unlinkSheet: vi.fn(),
   getStudentRoster: vi.fn(),
   saveScoresToSheet: vi.fn(),
+  submitGrade: vi.fn(),
+  pollGradingStatus: vi.fn(),
+  getActiveGradingJob: vi.fn().mockResolvedValue({ data: null }),
+  getEssayText: vi.fn(),
+  logScoreOverrides: vi.fn(),
+}))
+
+vi.mock('../lib/polling', () => ({
+  startPolling: vi.fn().mockReturnValue({ cancel: vi.fn() }),
 }))
 
 import { connectionStatus } from '../state/connection'
 import { linkedSheet, setupStep, resetSetup } from '../state/sheet'
 import { studentRoster, selectedStudent } from '../state/students'
+import { gradingStatus, resetGrading } from '../state/grading'
 import { checkBackendHealth, getLinkedSheet } from '../lib/gas'
 import { App } from './app'
 
@@ -29,6 +39,7 @@ describe('App', () => {
     studentRoster.value = []
     selectedStudent.value = null
     resetSetup()
+    resetGrading()
     vi.clearAllMocks()
     mockGetLinkedSheet.mockResolvedValue(null)
   })

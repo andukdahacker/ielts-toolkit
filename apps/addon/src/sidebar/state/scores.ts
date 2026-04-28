@@ -1,6 +1,6 @@
 import { signal, computed } from '@preact/signals'
 import { type BandScores, BAND_RANGE, CRITERIA_LIST } from '@ielts-toolkit/shared'
-import { saveScoresToSheet } from '../lib/gas'
+import { saveScoresToSheet, logScoreOverrides } from '../lib/gas'
 import { selectedTaskType, savedTaskType } from './grading'
 
 type ScoreMap = Record<keyof BandScores, number | null>
@@ -95,6 +95,21 @@ export async function saveScores(): Promise<void> {
   } catch (err) {
     saveError.value = err instanceof Error ? err.message : 'Failed to save scores'
     saveStatus.value = 'error'
+    return
+  }
+
+  // Fire-and-forget: log score overrides if AI grading was used (outside try/catch so failures don't affect save status)
+  try {
+    const { gradingJobId, getScoreOverrides } = await import('./grading')
+    const jobId = gradingJobId.value
+    if (jobId) {
+      const overrides = await getScoreOverrides()
+      if (overrides.length > 0) {
+        logScoreOverrides(jobId, overrides).catch(() => {})
+      }
+    }
+  } catch {
+    // Override logging is best-effort — never affect save status
   }
 }
 
