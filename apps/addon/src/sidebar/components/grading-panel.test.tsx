@@ -10,6 +10,7 @@ vi.mock('../lib/gas', () => ({
   saveScoresToSheet: vi.fn(),
   checkBackendHealth: vi.fn(),
   getStudentRoster: vi.fn(),
+  insertDocComments: vi.fn(),
 }))
 
 vi.mock('../lib/polling', () => ({
@@ -21,6 +22,7 @@ import {
   gradingError,
   gradingMessage,
   pollingTimedOut,
+  commentInsertionProgress,
   resetGrading,
 } from '../state/grading'
 import { selectedStudent } from '../state/students'
@@ -145,6 +147,35 @@ describe('GradingPanel', () => {
       render(<GradingPanel />)
 
       expect(screen.getByLabelText('Enter scores manually')).toBeTruthy()
+    })
+  })
+
+  describe('inserting-comments state', () => {
+    it('shows progress message with spinner', () => {
+      gradingStatus.value = 'inserting-comments'
+      commentInsertionProgress.value = 'Inserting feedback into document...'
+      render(<GradingPanel />)
+
+      expect(screen.getByText('Inserting feedback into document...')).toBeTruthy()
+      expect(screen.getByRole('status')).toBeTruthy()
+    })
+
+    it('has accessible label', () => {
+      gradingStatus.value = 'inserting-comments'
+      commentInsertionProgress.value = 'Inserting feedback into document...'
+      render(<GradingPanel />)
+
+      expect(screen.getByLabelText('Inserting comments')).toBeTruthy()
+    })
+
+    it('does not block sidebar scrolling (no overlay)', () => {
+      gradingStatus.value = 'inserting-comments'
+      commentInsertionProgress.value = 'Inserting feedback into document...'
+      const { container } = render(<GradingPanel />)
+
+      // Verify no overlay or modal elements
+      expect(container.querySelector('.overlay')).toBeNull()
+      expect(container.querySelector('[role="dialog"]')).toBeNull()
     })
   })
 

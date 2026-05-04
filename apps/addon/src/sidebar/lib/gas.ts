@@ -72,3 +72,7 @@ export function getEssayText() {
 export function logScoreOverrides(jobId: string, overrides: Array<{ criterion: string; before: number; after: number }>) {
   return callGas<void>((r) => r.logScoreOverrides(jobId, overrides))
 }
+
+export function insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>) {
+  return callGas<CommentInsertionResult>((r) => r.insertDocComments(comments))
+}

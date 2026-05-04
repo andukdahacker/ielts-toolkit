@@ -34,3 +34,7 @@
 - **W11:** `customHeaders` in `callApi()` can overwrite Authorization header via `Object.assign` — only `X-Idempotency-Key` used currently, but API surface allows future callers to clobber auth.
 - **W12:** Empty essay text not validated before submission to `/grade` — blank Google Doc sends empty string. Validation may belong backend-side.
 - **W13:** AC7: Override payload sends `{ overrides }` without explicit `event_type: 'score_overridden'` field — depends on whether Story 3.1 backend endpoint infers event type from the route.
+
+## Deferred from: code review of 3-3-doc-comment-insertion-and-feedback-summary (2026-04-30)
+
+- **W16:** No performance timeout for comment insertion — spec says 10s target is best-effort; animated progress spinner covers the wait.

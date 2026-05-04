@@ -12,6 +12,7 @@ interface MockRunner {
   addStudentToRoster(name: string): void
   getSheetMeta(sheetUrl: string): void
   writeScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string): void
+  insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>): void
   [key: string]: unknown
 }
 
@@ -44,6 +45,7 @@ const mockResponses: Record<string, unknown> = {
   getActiveGradingJob: { data: null },
   getEssayText: 'The growth of international tourism has brought significant benefits to many countries...',
   logScoreOverrides: undefined,
+  insertDocComments: { inserted: 5, anchored: 4, general: 1, failed: 0, appended: false, commentIds: ['c1', 'c2', 'c3', 'c4', 'c5'] },
 }
 
 const mockErrors: Record<string, Error> = {
@@ -123,6 +125,9 @@ function createMockRunner(): MockRunner {
     },
     logScoreOverrides(_jobId: string, _overrides: Array<{ criterion: string; before: number; after: number }>) {
       dispatch('logScoreOverrides')
+    },
+    insertDocComments(_comments: Array<{ text: string; anchorText: string; category: string }>) {
+      dispatch('insertDocComments')
     },
   }
 

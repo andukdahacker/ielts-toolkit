@@ -14,6 +14,15 @@ type LinkedSheetInfo = SheetInfo & {
   studentColumn: number
 }
 
+type CommentInsertionResult = {
+  inserted: number
+  anchored: number
+  general: number
+  failed: number
+  appended: boolean
+  commentIds: string[]
+}
+
 declare namespace google {
   namespace script {
     interface RunnerWithHandlers {
@@ -35,6 +44,7 @@ declare namespace google {
       getActiveGradingJob(): void
       getEssayText(): void
       logScoreOverrides(jobId: string, overrides: Array<{ criterion: string; before: number; after: number }>): void
+      insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>): void
       [key: string]: unknown
     }
     const run: RunnerWithHandlers

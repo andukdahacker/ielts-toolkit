@@ -9,6 +9,7 @@ vi.mock('../lib/gas', () => ({
   saveScoresToSheet: vi.fn(),
   checkBackendHealth: vi.fn(),
   getStudentRoster: vi.fn(),
+  insertDocComments: vi.fn(),
 }))
 
 vi.mock('../lib/polling', () => ({
@@ -27,21 +28,28 @@ import {
   startGrading,
   cancelGrading,
   retryGrading,
+  retryCommentInsertion,
   switchToManualEntry,
   dismissTimeout,
   checkActiveJob,
   getScoreOverrides,
   resetGrading,
+  commentInsertionProgress,
+  commentInsertionResult,
+  insertedCommentIds,
+  commentStatusMessage,
+  feedbackExpanded,
 } from './grading'
 import { currentScores, savedScores, resetScores } from './scores'
 import { selectedStudent } from './students'
-import { submitGrade, getEssayText, getActiveGradingJob } from '../lib/gas'
+import { submitGrade, getEssayText, getActiveGradingJob, insertDocComments } from '../lib/gas'
 import { startPolling } from '../lib/polling'
 
 const mockSubmitGrade = vi.mocked(submitGrade)
 const mockGetEssayText = vi.mocked(getEssayText)
 const mockGetActiveGradingJob = vi.mocked(getActiveGradingJob)
 const mockStartPolling = vi.mocked(startPolling)
+const mockInsertDocComments = vi.mocked(insertDocComments)
 
 // Mock crypto.randomUUID
 Object.defineProperty(globalThis, 'crypto', {
@@ -155,6 +163,9 @@ describe('grading state', () => {
     it('sets done and populates scores on completed result', async () => {
       mockGetEssayText.mockResolvedValueOnce('Essay text')
       mockSubmitGrade.mockResolvedValueOnce({ data: { jobId: 'job-789' } })
+      mockInsertDocComments.mockResolvedValueOnce({
+        inserted: 1, anchored: 1, general: 0, failed: 0, appended: false, commentIds: ['c1'],
+      })
 
       await startGrading()
 
@@ -482,6 +493,154 @@ describe('grading state', () => {
     })
   })
 
+  describe('comment insertion flow', () => {
+    const commentsResult = {
+      bandScores: {
+        overall: 7.0,
+        taskAchievement: 6.5,
+        coherenceAndCohesion: 7.0,
+        lexicalResource: 7.5,
+        grammaticalRangeAndAccuracy: 6.0,
+      },
+      comments: [
+        { text: 'Good intro', anchorText: 'introduction paragraph', category: 'TA' },
+        { text: 'Improve linking', anchorText: 'however the', category: 'CC' },
+      ],
+    }
+
+    const emptyCommentsResult = {
+      bandScores: {
+        overall: 7.0,
+        taskAchievement: 6.5,
+        coherenceAndCohesion: 7.0,
+        lexicalResource: 7.5,
+        grammaticalRangeAndAccuracy: 6.0,
+      },
+      comments: [],
+    }
+
+    it('transitions to inserting-comments when comments are non-empty', async () => {
+      mockGetEssayText.mockResolvedValueOnce('Essay text')
+      mockSubmitGrade.mockResolvedValueOnce({ data: { jobId: 'job-c1' } })
+      mockInsertDocComments.mockResolvedValueOnce({
+        inserted: 2, anchored: 2, general: 0, failed: 0, appended: false, commentIds: ['c1', 'c2'],
+      })
+
+      await startGrading()
+
+      const onResult = mockStartPolling.mock.calls[0][1]
+      onResult({ data: { status: 'completed' as const, result: commentsResult } })
+
+      await vi.waitFor(() => {
+        expect(mockInsertDocComments).toHaveBeenCalledWith(commentsResult.comments)
+      })
+
+      await vi.waitFor(() => {
+        expect(gradingStatus.value).toBe('done')
+      })
+      expect(insertedCommentIds.value).toEqual(['c1', 'c2'])
+    })
+
+    it('skips inserting-comments when comments are empty', async () => {
+      mockGetEssayText.mockResolvedValueOnce('Essay text')
+      mockSubmitGrade.mockResolvedValueOnce({ data: { jobId: 'job-c2' } })
+
+      await startGrading()
+
+      const onResult = mockStartPolling.mock.calls[0][1]
+      onResult({ data: { status: 'completed' as const, result: emptyCommentsResult } })
+
+      await vi.waitFor(() => {
+        expect(gradingStatus.value).toBe('done')
+      })
+      expect(mockInsertDocComments).not.toHaveBeenCalled()
+    })
+
+    it('transitions to error when comment insertion fails', async () => {
+      mockGetEssayText.mockResolvedValueOnce('Essay text')
+      mockSubmitGrade.mockResolvedValueOnce({ data: { jobId: 'job-c3' } })
+      mockInsertDocComments.mockRejectedValueOnce(new Error('Drive API error'))
+
+      await startGrading()
+
+      const onResult = mockStartPolling.mock.calls[0][1]
+      onResult({ data: { status: 'completed' as const, result: commentsResult } })
+
+      await vi.waitFor(() => {
+        expect(gradingStatus.value).toBe('error')
+      })
+      expect(gradingError.value).toBe('Drive API error')
+    })
+
+    it('stores commentInsertionResult on success', async () => {
+      mockGetEssayText.mockResolvedValueOnce('Essay text')
+      mockSubmitGrade.mockResolvedValueOnce({ data: { jobId: 'job-c4' } })
+      const insertResult = {
+        inserted: 3, anchored: 2, general: 1, failed: 0, appended: false, commentIds: ['c1', 'c2', 'c3'],
+      }
+      mockInsertDocComments.mockResolvedValueOnce(insertResult)
+
+      await startGrading()
+
+      const onResult = mockStartPolling.mock.calls[0][1]
+      onResult({ data: { status: 'completed' as const, result: commentsResult } })
+
+      await vi.waitFor(() => {
+        expect(commentInsertionResult.value).toEqual(insertResult)
+      })
+    })
+
+    it('does nothing when already inserting comments', async () => {
+      gradingStatus.value = 'inserting-comments'
+
+      await startGrading()
+
+      expect(mockGetEssayText).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('commentStatusMessage', () => {
+    it('returns empty string when no result', () => {
+      commentInsertionResult.value = null
+      expect(commentStatusMessage.value).toBe('')
+    })
+
+    it('returns empty string when all comments anchored (clean success)', () => {
+      commentInsertionResult.value = {
+        inserted: 5, anchored: 5, general: 0, failed: 0, appended: false, commentIds: ['c1', 'c2', 'c3', 'c4', 'c5'],
+      }
+      expect(commentStatusMessage.value).toBe('')
+    })
+
+    it('returns partial anchor message', () => {
+      commentInsertionResult.value = {
+        inserted: 5, anchored: 4, general: 1, failed: 0, appended: false, commentIds: ['c1', 'c2', 'c3', 'c4', 'c5'],
+      }
+      expect(commentStatusMessage.value).toBe('4 comments anchored to text, 1 added as general feedback')
+    })
+
+    it('returns appended fallback message', () => {
+      commentInsertionResult.value = {
+        inserted: 0, anchored: 0, general: 0, failed: 3, appended: true, commentIds: [],
+      }
+      expect(commentStatusMessage.value).toBe('Comments added as a feedback section at the end of the document')
+    })
+
+    it('returns failed count message when some comments failed', () => {
+      commentInsertionResult.value = {
+        inserted: 3, anchored: 3, general: 0, failed: 2, appended: false, commentIds: ['c1', 'c2', 'c3'],
+      }
+      expect(commentStatusMessage.value).toBe("2 comments couldn't be inserted")
+    })
+
+    it('returns combined partial anchor and failed message', () => {
+      commentInsertionResult.value = {
+        inserted: 4, anchored: 3, general: 1, failed: 1, appended: false, commentIds: ['c1', 'c2', 'c3', 'c4'],
+      }
+      expect(commentStatusMessage.value).toBe("3 comments anchored to text, 1 added as general feedback. 1 comment couldn't be inserted")
+    })
+  })
+
   describe('resetGrading', () => {
     it('clears all grading state', () => {
       gradingStatus.value = 'done'
@@ -496,6 +655,10 @@ describe('grading state', () => {
         lexicalResource: 7.5,
         grammaticalRangeAndAccuracy: 6.0,
       }
+      commentInsertionProgress.value = 'Inserting...'
+      commentInsertionResult.value = { inserted: 1, anchored: 1, general: 0, failed: 0, appended: false, commentIds: ['c1'] }
+      insertedCommentIds.value = ['c1']
+      feedbackExpanded.value = false
 
       resetGrading()
 
@@ -506,6 +669,68 @@ describe('grading state', () => {
       expect(pollingTimedOut.value).toBe(false)
       expect(aiScores.value).toBeNull()
       expect(aiComments.value).toBeNull()
+      expect(commentInsertionProgress.value).toBe('')
+      expect(commentInsertionResult.value).toBeNull()
+      expect(insertedCommentIds.value).toEqual([])
+      expect(feedbackExpanded.value).toBe(true)
+    })
+  })
+
+  describe('retryCommentInsertion', () => {
+    it('retries comment insertion without re-grading', async () => {
+      aiComments.value = [
+        { text: 'Good intro', anchorText: 'introduction', category: 'TA' },
+      ]
+      gradingStatus.value = 'error'
+      gradingError.value = 'Drive API error'
+      mockInsertDocComments.mockResolvedValueOnce({
+        inserted: 1, anchored: 1, general: 0, failed: 0, appended: false, commentIds: ['c1'],
+      })
+
+      await retryCommentInsertion()
+
+      await vi.waitFor(() => {
+        expect(gradingStatus.value).toBe('done')
+      })
+      expect(gradingError.value).toBeNull()
+      expect(mockGetEssayText).not.toHaveBeenCalled()
+      expect(mockSubmitGrade).not.toHaveBeenCalled()
+    })
+
+    it('does nothing when no comments available', async () => {
+      aiComments.value = null
+
+      await retryCommentInsertion()
+
+      expect(mockInsertDocComments).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('checkActiveJob skips comment insertion', () => {
+    it('does not re-insert comments for completed resumed job', async () => {
+      mockGetActiveGradingJob.mockResolvedValueOnce({
+        data: {
+          jobId: 'resumed-job',
+          status: 'completed',
+          result: {
+            bandScores: {
+              overall: 7.0,
+              taskAchievement: 6.5,
+              coherenceAndCohesion: 7.0,
+              lexicalResource: 7.5,
+              grammaticalRangeAndAccuracy: 6.0,
+            },
+            comments: [{ text: 'Good', anchorText: 'intro', category: 'TA' }],
+          },
+        },
+      })
+
+      await checkActiveJob()
+
+      await vi.waitFor(() => {
+        expect(gradingStatus.value).toBe('done')
+      })
+      expect(mockInsertDocComments).not.toHaveBeenCalled()
     })
   })
 })

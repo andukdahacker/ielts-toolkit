@@ -11,10 +11,11 @@ import { TaskTypePicker } from './task-type-picker'
 import { ScoreEditor } from './score-editor'
 import { SaveButton } from './save-button'
 import { GradingPanel } from './grading-panel'
+import { FeedbackSummary } from './feedback-summary'
 import { connectionStatus, checkConnection } from '../state/connection'
 import { linkedSheet, initializeSheet } from '../state/sheet'
 import { selectedStudent } from '../state/students'
-import { gradingStatus, checkActiveJob } from '../state/grading'
+import { gradingStatus, aiComments, checkActiveJob } from '../state/grading'
 
 export function App() {
   useEffect(() => {
@@ -46,6 +47,9 @@ export function App() {
                   <ScoreEditor />
                   <SaveButton />
                 </>
+              )}
+              {gradingStatus.value === 'done' && aiComments.value !== null && (
+                <FeedbackSummary />
               )}
             </>
           ) : (

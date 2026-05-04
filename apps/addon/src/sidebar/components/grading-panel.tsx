@@ -3,9 +3,12 @@ import {
   gradingError,
   gradingMessage,
   pollingTimedOut,
+  commentInsertionProgress,
+  aiComments,
   startGrading,
   cancelGrading,
   retryGrading,
+  retryCommentInsertion,
   switchToManualEntry,
   dismissTimeout,
 } from '../state/grading'
@@ -74,16 +77,34 @@ export function GradingPanel() {
     )
   }
 
+  if (status === 'inserting-comments') {
+    return (
+      <div class="block grading-panel" role="status" aria-label="Inserting comments">
+        <div class="grading-progress">
+          <span class="grading-spinner" aria-hidden="true" />
+          <span>{commentInsertionProgress.value}</span>
+        </div>
+      </div>
+    )
+  }
+
   if (status === 'error') {
+    const hasCompletedGrading = aiComments.value !== null
     return (
       <div class="block grading-panel" role="alert">
         <p class="error">
           {gradingError.value ?? "Grading couldn't complete."}
         </p>
         <div class="grading-actions">
-          <button class="action" onClick={retryGrading} aria-label="Retry grading">
-            Retry
-          </button>
+          {hasCompletedGrading ? (
+            <button class="action" onClick={retryCommentInsertion} aria-label="Retry inserting comments">
+              Retry inserting comments
+            </button>
+          ) : (
+            <button class="action" onClick={retryGrading} aria-label="Retry grading">
+              Retry
+            </button>
+          )}
           <button class="share" onClick={switchToManualEntry} aria-label="Enter scores manually">
             Enter scores manually
           </button>

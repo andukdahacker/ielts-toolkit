@@ -16,6 +16,7 @@ vi.mock('../lib/gas', () => ({
   getActiveGradingJob: vi.fn().mockResolvedValue({ data: null }),
   getEssayText: vi.fn(),
   logScoreOverrides: vi.fn(),
+  insertDocComments: vi.fn(),
 }))
 
 vi.mock('../lib/polling', () => ({
@@ -25,7 +26,7 @@ vi.mock('../lib/polling', () => ({
 import { connectionStatus } from '../state/connection'
 import { linkedSheet, setupStep, resetSetup } from '../state/sheet'
 import { studentRoster, selectedStudent } from '../state/students'
-import { gradingStatus, resetGrading } from '../state/grading'
+import { gradingStatus, aiComments, resetGrading } from '../state/grading'
 import { checkBackendHealth, getLinkedSheet } from '../lib/gas'
 import { App } from './app'
 
@@ -153,5 +154,31 @@ describe('App', () => {
     await waitFor(() => {
       expect(mockGetLinkedSheet).toHaveBeenCalledOnce()
     })
+  })
+
+  it('renders FeedbackSummary when grading is done with comments', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh']
+    selectedStudent.value = 'Minh'
+    gradingStatus.value = 'done'
+    aiComments.value = [{ text: 'Good intro', anchorText: 'The essay', category: 'TA' }]
+
+    render(<App />)
+
+    expect(screen.getByText('AI Feedback Summary')).toBeTruthy()
+  })
+
+  it('does not render FeedbackSummary when grading is done with no comments', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh']
+    selectedStudent.value = 'Minh'
+    gradingStatus.value = 'done'
+    aiComments.value = null
+
+    render(<App />)
+
+    expect(screen.queryByText('AI Feedback Summary')).toBeNull()
   })
 })
