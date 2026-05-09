@@ -8,6 +8,6 @@ export default defineConfig({
   }),
   plugins: [new CamelCasePlugin()],
   migrations: {
-    migrationFolder: './src/db/migrations',
+    migrationFolder: './dist/db/migrations',
   },
 })
