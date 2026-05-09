@@ -30,7 +30,7 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY apps/api/.kyselyrc.ts ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
 ENV NODE_ENV=production
 EXPOSE 3000
