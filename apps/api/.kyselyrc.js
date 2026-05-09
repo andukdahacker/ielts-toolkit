@@ -1,10 +1,10 @@
 import { defineConfig } from 'kysely-ctl'
 import { PostgresDialect, CamelCasePlugin } from 'kysely'
-import { Pool } from 'pg'
+import pg from 'pg'
 
 export default defineConfig({
   dialect: new PostgresDialect({
-    pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+    pool: new pg.Pool({ connectionString: process.env.DATABASE_URL }),
   }),
   plugins: [new CamelCasePlugin()],
   migrations: {
