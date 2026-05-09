@@ -45,6 +45,8 @@ declare namespace google {
       getEssayText(): void
       logScoreOverrides(jobId: string, overrides: Array<{ criterion: string; before: number; after: number }>): void
       insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>): void
+      deleteDocComments(commentIds: string[]): void
+      logGradingEvents(jobId: string, events: Array<{ eventType: string; payload?: Record<string, unknown> }>): void
       [key: string]: unknown
     }
     const run: RunnerWithHandlers

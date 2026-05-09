@@ -13,6 +13,8 @@ interface MockRunner {
   getSheetMeta(sheetUrl: string): void
   writeScoresToSheet(studentName: string, scores: { overall: number; taskAchievement: number; coherenceAndCohesion: number; lexicalResource: number; grammaticalRangeAndAccuracy: number }, taskType: string): void
   insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>): void
+  deleteDocComments(commentIds: string[]): void
+  logGradingEvents(jobId: string, events: Array<{ eventType: string; payload?: Record<string, unknown> }>): void
   [key: string]: unknown
 }
 
@@ -46,6 +48,8 @@ const mockResponses: Record<string, unknown> = {
   getEssayText: 'The growth of international tourism has brought significant benefits to many countries...',
   logScoreOverrides: undefined,
   insertDocComments: { inserted: 5, anchored: 4, general: 1, failed: 0, appended: false, commentIds: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+  deleteDocComments: { deleted: 5, notFound: 0 },
+  logGradingEvents: undefined,
 }
 
 const mockErrors: Record<string, Error> = {
@@ -128,6 +132,12 @@ function createMockRunner(): MockRunner {
     },
     insertDocComments(_comments: Array<{ text: string; anchorText: string; category: string }>) {
       dispatch('insertDocComments')
+    },
+    deleteDocComments(_commentIds: string[]) {
+      dispatch('deleteDocComments')
+    },
+    logGradingEvents(_jobId: string, _events: Array<{ eventType: string; payload?: Record<string, unknown> }>) {
+      dispatch('logGradingEvents')
     },
   }
 

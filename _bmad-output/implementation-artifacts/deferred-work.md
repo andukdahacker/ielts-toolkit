@@ -38,3 +38,14 @@
 ## Deferred from: code review of 3-3-doc-comment-insertion-and-feedback-summary (2026-04-30)
 
 - **W16:** No performance timeout for comment insertion — spec says 10s target is best-effort; animated progress spinner covers the wait.
+
+## Deferred from: code review of 3-4-comment-management-and-re-grading (2026-05-04)
+
+- **W17:** `aiComments` is nulled during re-grade polling cycle — `resetGrading()` sets `aiComments.value = null`, so the feedback summary disappears during re-grade even when the teacher chose "keep comments". Preserving `aiComments` across re-grade would require splitting reset logic.
+- **W18:** No indication that comment deletion is in progress — between `resetGrading()` and `deleteDocComments()` completing, no "deleting comments..." status is shown. UX enhancement.
+
+## Deferred from: code review of 3-4-comment-management-and-re-grading, round 2 (2026-05-09)
+
+- **W19:** Unhandled promise from `onGradingComplete` in `checkActiveJob` — `state/grading.ts:231-232` — returned promise not awaited or caught; if dynamic import fails, `gradingStatus` gets stuck. Pre-existing from Story 3.2.
+- **W20:** Polling never terminates after `onTimeout` — `polling.ts` — timeout callback sets UI flag but doesn't stop the polling loop; client polls every 4s indefinitely if backend job is permanently stuck. Pre-existing from Story 3.2.
+- **W21:** `confirmRegrade` may grade wrong student if teacher switches during `deleteDocComments` await — `state/grading.ts:287-292` — `startGrading()` reads `selectedStudent.value` at call time, not when re-grade was initiated. Needs UX design decision.

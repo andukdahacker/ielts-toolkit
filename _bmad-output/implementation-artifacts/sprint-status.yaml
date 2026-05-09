@@ -35,7 +35,12 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22
-last_updated: 2026-04-30
+last_updated: 2026-05-09
+# Story 3-4 code review round 2 complete: 2026-05-09
+# Story 3-4 review findings addressed: 2026-05-09
+# Story 3-4 review returned to in-progress: 2026-05-04
+# Story 3-4 started: 2026-05-04
+# Story 3-4 created: 2026-05-04
 # Story 3-3 review complete: 2026-04-30
 # Story 3-3 started: 2026-04-29
 # Story 3-3 created: 2026-04-29
@@ -74,7 +79,7 @@ development_status:
   3-1-grading-backend-gemini-proxy-and-async-job-pipeline: done
   3-2-grading-sidebar-initiate-poll-and-display-results: done
   3-3-doc-comment-insertion-and-feedback-summary: done
-  3-4-comment-management-and-re-grading: backlog
+  3-4-comment-management-and-re-grading: done
   epic-3-retrospective: optional
 
   # Epic 4: Billing & Monetization (Phase 2)

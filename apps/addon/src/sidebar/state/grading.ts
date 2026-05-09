@@ -1,6 +1,6 @@
 import { signal, computed } from '@preact/signals'
 import type { TaskType, BandScores, GradeResult } from '@ielts-toolkit/shared'
-import { submitGrade, pollGradingStatus, getActiveGradingJob, getEssayText, insertDocComments } from '../lib/gas'
+import { submitGrade, pollGradingStatus, getActiveGradingJob, getEssayText, insertDocComments, deleteDocComments, logGradingEvents } from '../lib/gas'
 import { startPolling } from '../lib/polling'
 
 export type GradingStatus = 'idle' | 'submitting' | 'polling' | 'inserting-comments' | 'done' | 'error'
@@ -20,6 +20,12 @@ export const commentInsertionProgress = signal<string>('')
 export const commentInsertionResult = signal<CommentInsertionResult | null>(null)
 export const insertedCommentIds = signal<string[]>([])
 export const feedbackExpanded = signal<boolean>(true)
+export const showRegradeConfirm = signal<boolean>(false)
+export const feedbackGiven = signal<boolean>(false)
+export const feedbackShowTextInput = signal<boolean>(false)
+export const feedbackText = signal<string>('')
+export const feedbackSubmitted = signal<boolean>(false)
+export const feedbackSelectedRating = signal<'positive' | 'negative' | null>(null)
 
 export const commentStatusMessage = computed<string>(() => {
   const result = commentInsertionResult.value
@@ -252,6 +258,40 @@ export async function getScoreOverrides(): Promise<Array<{ criterion: string; be
   return overrides
 }
 
+export function requestRegrade(): void {
+  showRegradeConfirm.value = true
+}
+
+export function cancelRegrade(): void {
+  showRegradeConfirm.value = false
+}
+
+export async function confirmRegrade(clearComments: boolean): Promise<void> {
+  if (gradingStatus.value === 'submitting' || gradingStatus.value === 'polling' || gradingStatus.value === 'inserting-comments') return
+
+  const idsToDelete = [...insertedCommentIds.value]
+  const jobId = gradingJobId.value
+
+  showRegradeConfirm.value = false
+
+  // Fire-and-forget event logging
+  if (jobId) {
+    logGradingEvents(jobId, [{
+      eventType: 'regrade_started',
+      payload: { clearedComments: clearComments, previousCommentCount: idsToDelete.length },
+    }]).catch(() => {})
+  }
+
+  resetGrading()
+
+  if (clearComments && idsToDelete.length > 0) {
+    await deleteDocComments(idsToDelete).catch(() => {})
+  }
+
+  feedbackGiven.value = false
+  await startGrading()
+}
+
 export function resetGrading(): void {
   if (cancelPolling) {
     cancelPolling()
@@ -268,4 +308,10 @@ export function resetGrading(): void {
   commentInsertionResult.value = null
   insertedCommentIds.value = []
   feedbackExpanded.value = true
+  showRegradeConfirm.value = false
+  feedbackGiven.value = false
+  feedbackShowTextInput.value = false
+  feedbackText.value = ''
+  feedbackSubmitted.value = false
+  feedbackSelectedRating.value = null
 }

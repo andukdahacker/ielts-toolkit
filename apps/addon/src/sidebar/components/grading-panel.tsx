@@ -5,18 +5,40 @@ import {
   pollingTimedOut,
   commentInsertionProgress,
   aiComments,
+  insertedCommentIds,
   startGrading,
   cancelGrading,
   retryGrading,
   retryCommentInsertion,
   switchToManualEntry,
   dismissTimeout,
+  requestRegrade,
+  confirmRegrade,
 } from '../state/grading'
 
 export function GradingPanel() {
   const status = gradingStatus.value
 
-  if (status === 'done') return null
+  if (status === 'done') {
+    if (aiComments.value === null) return null
+    return (
+      <div class="block grading-panel">
+        <button
+          class="create"
+          onClick={() => {
+            if (insertedCommentIds.value.length === 0) {
+              confirmRegrade(false).catch(() => {})
+            } else {
+              requestRegrade()
+            }
+          }}
+          aria-label="Re-grade essay"
+        >
+          Re-grade
+        </button>
+      </div>
+    )
+  }
 
   if (status === 'idle') {
     return (

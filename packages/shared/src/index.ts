@@ -21,6 +21,8 @@ export {
   type JobStatus,
   scoreWritePayloadSchema,
   type ScoreWritePayload,
+  gradingEventSchema,
+  type GradingEvent,
 } from './api.js'
 
 export {

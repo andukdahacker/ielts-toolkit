@@ -17,6 +17,8 @@ vi.mock('../lib/gas', () => ({
   getEssayText: vi.fn(),
   logScoreOverrides: vi.fn(),
   insertDocComments: vi.fn(),
+  deleteDocComments: vi.fn().mockResolvedValue({ deleted: 0, notFound: 0 }),
+  logGradingEvents: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../lib/polling', () => ({
@@ -26,7 +28,7 @@ vi.mock('../lib/polling', () => ({
 import { connectionStatus } from '../state/connection'
 import { linkedSheet, setupStep, resetSetup } from '../state/sheet'
 import { studentRoster, selectedStudent } from '../state/students'
-import { gradingStatus, aiComments, resetGrading } from '../state/grading'
+import { gradingStatus, aiComments, showRegradeConfirm, feedbackGiven, resetGrading } from '../state/grading'
 import { checkBackendHealth, getLinkedSheet } from '../lib/gas'
 import { App } from './app'
 
@@ -180,5 +182,45 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.queryByText('AI Feedback Summary')).toBeNull()
+  })
+
+  it('renders RegradeConfirm when showRegradeConfirm is true', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh']
+    selectedStudent.value = 'Minh'
+    showRegradeConfirm.value = true
+
+    render(<App />)
+
+    expect(screen.getByText('Clear previous AI comments before re-grading?')).toBeTruthy()
+  })
+
+  it('renders GradingFeedback when done with comments and feedback not given', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh']
+    selectedStudent.value = 'Minh'
+    gradingStatus.value = 'done'
+    aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'TA' }]
+    feedbackGiven.value = false
+
+    render(<App />)
+
+    expect(screen.getByText('Was this grading helpful?')).toBeTruthy()
+  })
+
+  it('does not render GradingFeedback when feedback already given', () => {
+    mockCheckBackendHealth.mockResolvedValueOnce({ data: { status: 'ok' } })
+    linkedSheet.value = { id: 'sheet-1', name: 'Test Sheet', url: 'https://docs.google.com/spreadsheets/d/sheet-1', studentColumn: 0 }
+    studentRoster.value = ['Minh']
+    selectedStudent.value = 'Minh'
+    gradingStatus.value = 'done'
+    aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'TA' }]
+    feedbackGiven.value = true
+
+    render(<App />)
+
+    expect(screen.queryByText('Was this grading helpful?')).toBeNull()
   })
 })

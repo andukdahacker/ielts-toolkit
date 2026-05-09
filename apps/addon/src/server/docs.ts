@@ -19,6 +19,29 @@ interface CommentInsertionResult {
   commentIds: string[]
 }
 
+function deleteDocComments(commentIds: string[]): { deleted: number; notFound: number } {
+  const doc = DocumentApp.getActiveDocument()
+  if (!doc) throw new Error('No active document found')
+  const docId = doc.getId()
+  const comments_api = Drive.Comments as unknown as DriveV3CommentsCollection
+
+  let deleted = 0
+  let notFound = 0
+
+  for (const commentId of commentIds) {
+    try {
+      comments_api.remove(docId, commentId)
+      deleted++
+    } catch (e: unknown) {
+      // Drive API returns 404 for already-deleted comments; count those as notFound.
+      // Other errors (permissions, quota) are also non-fatal — skip and continue.
+      notFound++
+    }
+  }
+
+  return { deleted, notFound }
+}
+
 function insertDocComments(comments: CommentInput[]): CommentInsertionResult {
   const doc = DocumentApp.getActiveDocument()
   if (!doc) throw new Error('No active document found')

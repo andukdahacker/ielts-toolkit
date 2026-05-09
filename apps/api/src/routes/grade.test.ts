@@ -50,7 +50,7 @@ function createMockDb() {
 
   const returningAll = vi.fn().mockReturnValue({ executeTakeFirstOrThrow, executeTakeFirst })
   const onConflict = vi.fn().mockReturnValue({ returningAll })
-  const values = vi.fn().mockReturnValue({ returningAll, onConflict })
+  const values = vi.fn().mockReturnValue({ returningAll, onConflict, execute })
   const insertInto = vi.fn().mockReturnValue({ values })
 
   const updateTable = vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue(chainable) })
@@ -280,6 +280,90 @@ describe('GET /grade/:jobId/status', () => {
     expect(body.data.status).toBe('failed')
     expect(body.data.error.code).toBe('GRADING_FAILED')
     expect(body.data.error.retryable).toBe(true)
+  })
+})
+
+describe('POST /grade/:jobId/events', () => {
+  it('returns 201 for valid event', async () => {
+    // Mock getJobStatus to return a job (teacher owns it)
+    mockDb._mocks.executeTakeFirst.mockResolvedValue({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      status: 'completed',
+      resultScores: null,
+      resultComments: null,
+      errorCode: null,
+      errorMessage: null,
+      errorRetryable: null,
+    })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/grade/550e8400-e29b-41d4-a716-446655440000/events',
+      payload: {
+        eventType: 'feedback',
+        payload: { rating: 'positive', comment: 'great' },
+      },
+    })
+
+    expect(res.statusCode).toBe(201)
+    expect(res.json().data.id).toBe('550e8400-e29b-41d4-a716-446655440000')
+  })
+
+  it('returns 400 for invalid jobId', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/grade/not-a-uuid/events',
+      payload: {
+        eventType: 'feedback',
+      },
+    })
+
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 404 when job not owned by teacher (tenant isolation)', async () => {
+    mockDb._mocks.executeTakeFirst.mockResolvedValue(null)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/grade/550e8400-e29b-41d4-a716-446655440000/events',
+      payload: {
+        eventType: 'score_overridden',
+        payload: { overrides: [] },
+      },
+    })
+
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('returns 400 when payload exceeds 20 keys', async () => {
+    const largePayload: Record<string, unknown> = {}
+    for (let i = 0; i < 25; i++) {
+      largePayload[`key_${i}`] = 'value'
+    }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/grade/550e8400-e29b-41d4-a716-446655440000/events',
+      payload: {
+        eventType: 'feedback',
+        payload: largePayload,
+      },
+    })
+
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 for unknown event type', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/grade/550e8400-e29b-41d4-a716-446655440000/events',
+      payload: {
+        eventType: 'unknown_type',
+      },
+    })
+
+    expect(res.statusCode).toBe(400)
   })
 })
 

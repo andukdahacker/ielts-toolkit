@@ -29,6 +29,21 @@ export const jobStatusSchema = z.object({
 })
 export type JobStatus = z.infer<typeof jobStatusSchema>
 
+export const gradingEventSchema = z.object({
+  eventType: z.enum(['score_overridden', 'feedback', 'feedback_comment', 'regrade_started']),
+  payload: z.record(z.unknown())
+    .refine(
+      (obj) => Object.keys(obj).length <= 20,
+      { message: 'Payload must have at most 20 keys' },
+    )
+    .refine(
+      (obj) => JSON.stringify(obj).length <= 8192,
+      { message: 'Payload must be under 8KB' },
+    )
+    .optional(),
+})
+export type GradingEvent = z.infer<typeof gradingEventSchema>
+
 export const scoreWritePayloadSchema = z.object({
   studentName: z.string(),
   bandScores: bandScoresSchema,

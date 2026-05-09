@@ -76,3 +76,11 @@ export function logScoreOverrides(jobId: string, overrides: Array<{ criterion: s
 export function insertDocComments(comments: Array<{ text: string; anchorText: string; category: string }>) {
   return callGas<CommentInsertionResult>((r) => r.insertDocComments(comments))
 }
+
+export function deleteDocComments(commentIds: string[]) {
+  return callGas<{ deleted: number; notFound: number }>((r) => r.deleteDocComments(commentIds))
+}
+
+export function logGradingEvents(jobId: string, events: Array<{ eventType: string; payload?: Record<string, unknown> }>) {
+  return callGas<void>((r) => r.logGradingEvents(jobId, events))
+}

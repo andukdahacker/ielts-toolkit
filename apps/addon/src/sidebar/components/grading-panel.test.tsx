@@ -11,6 +11,8 @@ vi.mock('../lib/gas', () => ({
   checkBackendHealth: vi.fn(),
   getStudentRoster: vi.fn(),
   insertDocComments: vi.fn(),
+  deleteDocComments: vi.fn().mockResolvedValue({ deleted: 0, notFound: 0 }),
+  logGradingEvents: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../lib/polling', () => ({
@@ -23,6 +25,9 @@ import {
   gradingMessage,
   pollingTimedOut,
   commentInsertionProgress,
+  aiComments,
+  insertedCommentIds,
+  showRegradeConfirm,
   resetGrading,
 } from '../state/grading'
 import { selectedStudent } from '../state/students'
@@ -180,10 +185,44 @@ describe('GradingPanel', () => {
   })
 
   describe('done state', () => {
-    it('renders nothing when grading is done', () => {
+    it('renders nothing when done and no AI comments', () => {
       gradingStatus.value = 'done'
+      aiComments.value = null
       const { container } = render(<GradingPanel />)
       expect(container.innerHTML).toBe('')
+    })
+
+    it('shows Re-grade button when done with AI comments', () => {
+      gradingStatus.value = 'done'
+      aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'coherence' }]
+      render(<GradingPanel />)
+      expect(screen.getByText('Re-grade')).toBeTruthy()
+    })
+
+    it('Re-grade button has secondary styling', () => {
+      gradingStatus.value = 'done'
+      aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'coherence' }]
+      render(<GradingPanel />)
+      expect(screen.getByText('Re-grade').className).toContain('create')
+    })
+
+    it('Re-grade click shows confirm dialog when comment IDs exist', () => {
+      gradingStatus.value = 'done'
+      aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'coherence' }]
+      insertedCommentIds.value = ['c1', 'c2']
+      render(<GradingPanel />)
+      fireEvent.click(screen.getByText('Re-grade'))
+      expect(showRegradeConfirm.value).toBe(true)
+    })
+
+    it('Re-grade click skips dialog when no comment IDs', () => {
+      gradingStatus.value = 'done'
+      aiComments.value = [{ text: 'Good', anchorText: 'test', category: 'coherence' }]
+      insertedCommentIds.value = []
+      render(<GradingPanel />)
+      fireEvent.click(screen.getByText('Re-grade'))
+      // Should call confirmRegrade(false) directly — no dialog shown
+      expect(showRegradeConfirm.value).toBe(false)
     })
   })
 

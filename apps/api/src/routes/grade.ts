@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { gradeRequestSchema, DomainError } from '@ielts-toolkit/shared'
+import { gradeRequestSchema, gradingEventSchema, DomainError } from '@ielts-toolkit/shared'
 import { NotFoundError } from '@ielts-toolkit/shared'
-import { createGradingJob, processGradingJob, getJobStatus, getActiveJob } from '../services/grading.js'
+import { createGradingJob, processGradingJob, getJobStatus, getActiveJob, logGradingEvent } from '../services/grading.js'
 import { checkEntitlement } from '../services/entitlements.js'
 import type { GeminiClient } from '../services/gemini.js'
 
@@ -62,6 +62,28 @@ const gradeRoutes = (opts: GradeRouteOptions): FastifyPluginAsync => {
     }, async (request) => {
       const result = await getActiveJob(fastify.db, request.teacherId)
       return { data: result }
+    })
+
+    // POST /grade/:jobId/events — log grading event
+    fastify.post('/grade/:jobId/events', {
+      onRequest: [fastify.authenticate],
+      schema: {
+        params: z.object({ jobId: uuidSchema }),
+        body: gradingEventSchema,
+      },
+    }, async (request, reply) => {
+      const { jobId } = request.params as { jobId: string }
+      const body = request.body as { eventType: string; payload?: Record<string, unknown> }
+
+      // Verify job belongs to this teacher (tenant isolation)
+      const job = await getJobStatus(fastify.db, jobId, request.teacherId)
+      if (!job) {
+        throw new NotFoundError('Grading job not found')
+      }
+
+      await logGradingEvent(fastify.db, request.teacherId, jobId, body.eventType, body.payload ?? null)
+
+      return reply.status(201).send({ data: { id: jobId } })
     })
 
     // GET /grade/:jobId/status — poll job status

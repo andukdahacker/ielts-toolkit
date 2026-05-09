@@ -12,10 +12,12 @@ import { ScoreEditor } from './score-editor'
 import { SaveButton } from './save-button'
 import { GradingPanel } from './grading-panel'
 import { FeedbackSummary } from './feedback-summary'
+import { RegradeConfirm } from './regrade-confirm'
+import { GradingFeedback } from './grading-feedback'
 import { connectionStatus, checkConnection } from '../state/connection'
 import { linkedSheet, initializeSheet } from '../state/sheet'
 import { selectedStudent } from '../state/students'
-import { gradingStatus, aiComments, checkActiveJob } from '../state/grading'
+import { gradingStatus, aiComments, showRegradeConfirm, feedbackGiven, checkActiveJob } from '../state/grading'
 
 export function App() {
   useEffect(() => {
@@ -41,6 +43,7 @@ export function App() {
           {hasStudent ? (
             <>
               <TaskTypePicker />
+              {showRegradeConfirm.value && <RegradeConfirm />}
               <GradingPanel />
               {(gradingStatus.value === 'idle' || gradingStatus.value === 'done') && (
                 <>
@@ -49,7 +52,10 @@ export function App() {
                 </>
               )}
               {gradingStatus.value === 'done' && aiComments.value !== null && (
-                <FeedbackSummary />
+                <>
+                  <FeedbackSummary />
+                  {!feedbackGiven.value && <GradingFeedback />}
+                </>
               )}
             </>
           ) : (
