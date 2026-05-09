@@ -18,19 +18,16 @@ COPY . .
 RUN pnpm turbo build --filter=@ielts-toolkit/api...
 
 # Production
-FROM node:20-alpine AS production
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
-WORKDIR /app
+FROM base AS production
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
+RUN pnpm install --frozen-lockfile
+
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY apps/api/.kyselyrc.ts ./apps/api/
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/package.json ./apps/api/
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
 ENV NODE_ENV=production
 EXPOSE 3000
