@@ -27,7 +27,6 @@ RUN pnpm install --frozen-lockfile
 
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY apps/api/.kyselyrc.js ./apps/api/
 
 ENV NODE_ENV=production
 EXPOSE 3000
